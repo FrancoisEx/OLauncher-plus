@@ -1,0 +1,59 @@
+# Olauncher+ : construit l'APK a chaque envoi sur la branche main ou olauncher-plus
+# (ou a la demande, onglet Actions > "Run workflow") et le publie dans une
+# Release GitHub telechargeable directement depuis le telephone.
+name: Olauncher+ APK
+
+on:
+  push:
+    branches: [main, olauncher-plus]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Lire et verifier la version
+        id: version
+        run: echo "version=$(./scripts/verifier_version.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Construire l'APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Nommer l'APK avec sa version
+        run: |
+          APK="olauncher-plus-${{ steps.version.outputs.version }}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK"
+          ./scripts/verifier_version.sh "$APK"
+          echo "APK=$APK" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APK }}
+          path: ${{ env.APK }}
+
+      - name: Publier la Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.version }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" --clobber
+          else
+            gh release create "$TAG" "$APK" --target "$GITHUB_SHA" \
+              --title "Olauncher+ $TAG" \
+              --notes "APK Olauncher+ $TAG. Ouvrir ce lien depuis le telephone et installer le fichier .apk."
+          fi

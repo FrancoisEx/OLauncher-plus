@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Olauncher+ : taille d'une icone rapide (zone tactile comprise) -->
+    <dimen name="quick_app_size">44dp</dimen>
+</resources>
