@@ -150,4 +150,8 @@
     <string name="move_down">Descendre</string>
     <string name="quick_apps">Icônes rapides</string>
     <string name="long_press_to_choose_quick_app">Appui long pour choisir une application</string>
+    <string name="reorder_home_apps">Réorganiser les favoris</string>
+    <string name="reorder_needs_two_apps">Affichez d\'abord au moins 2 applications sur l\'écran d\'accueil</string>
+    <string name="notification_dots">Points de notification</string>
+    <string name="notification_dots_disclosure">Pour afficher un point à côté des applications qui ont une notification non lue, Olauncher+ a besoin de l\'accès aux notifications. Seul le nom de l\'application est utilisé, gardé en mémoire et jamais partagé. Le contenu de vos notifications n\'est jamais lu.\n\nSi l\'interrupteur est grisé : Paramètres › Applications › Olauncher+ › ⋮ › Autoriser les paramètres restreints.</string>
 </resources><!-- French -->

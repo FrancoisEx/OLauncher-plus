@@ -1,7 +1,24 @@
-# Olauncher+ — v01_2026-10-30
+# Olauncher+ — v01a_2026-10-30
 
-Archive **complète** : tout le code source d'Olauncher+, prêt à être construit.
-Installation depuis rien (aucune version précédente).
+Ce fichier accompagne aussi bien l'archive **complète** (installation depuis rien)
+que l'archive **différentielle** `olauncher-plus-diff-v01a_…` : celle-ci contient
+seulement les fichiers changés depuis la v01, et s'installe par-dessus la v01.
+
+## Nouveautés de la v01a (installation par-dessus la v01, réglages conservés)
+
+- **Réorganiser les favoris** : Réglages › Écran d'accueil › « Réorganiser les
+  favoris ». Toute la liste s'affiche ; ▲ / ▼ déplacent un favori sans fermer la
+  fenêtre. Les ▲ / ▼ de l'appui long restent disponibles.
+- **Points de notification** : Réglages › Écran d'accueil › « Points de
+  notification ». Un petit point apparaît à côté des favoris, et sur les icônes
+  rapides, des applis qui ont une notification non lue (les notifications
+  permanentes — musique, recharge — sont ignorées). Désactivé par défaut ;
+  l'activer demande l'**accès aux notifications** (fenêtre d'Android). Si
+  l'interrupteur est grisé : Paramètres › Applications › Olauncher+ › ⋮ ›
+  « Autoriser les paramètres restreints ». Seul le nom de l'appli émettrice est
+  utilisé, en mémoire ; le contenu des notifications n'est jamais lu.
+
+Rien à supprimer à la main, aucune resynchronisation.
 
 Olauncher+ est une version personnelle d'Olauncher (logiciel libre, licence GPL-3.0,
 auteur d'origine : Tanuj M., https://github.com/tanujnotes/Olauncher), basée sur
@@ -36,14 +53,30 @@ L'APK se construit automatiquement sur GitHub (gratuit) grâce au fichier
 2. Y envoyer le contenu de cette archive (dossier caché `.github` compris), sur
    la branche principale `main`.
 3. Onglet **Actions** : la construction démarre seule (environ 5 minutes).
-4. Section **Releases** du dépôt : télécharger `olauncher-plus-v01_2026-10-30.apk`
+4. Section **Releases** du dépôt : télécharger le fichier `olauncher-plus-v…apk` le plus récent
    depuis le téléphone, l'ouvrir, autoriser l'installation, puis choisir
    Olauncher+ comme lanceur par défaut.
 
 Les versions suivantes porteront la même signature : elles s'installeront
 par-dessus sans perdre vos réglages.
 
-## Fichiers modifiés ou ajoutés par rapport à Olauncher v6.10.27
+## Fichiers changés depuis la v01 (contenu de l'archive différentielle v01a)
+
+```
+LISEZ-MOI.md
+app/build.gradle                         VERSION v01a, versionCode 116
+app/src/main/AndroidManifest.xml         service des points de notification
+app/src/main/java/app/olauncher/data/Prefs.kt
+app/src/main/java/app/olauncher/helper/DotDrawable.kt            (nouveau)
+app/src/main/java/app/olauncher/helper/NotificationDotService.kt (nouveau)
+app/src/main/java/app/olauncher/ui/HomeFragment.kt
+app/src/main/java/app/olauncher/ui/SettingsFragment.kt
+app/src/main/res/layout/fragment_settings.xml        (+ layout-land/)
+app/src/main/res/values/strings.xml
+app/src/main/res/values-fr/strings.xml
+```
+
+## Fichiers modifiés ou ajoutés par rapport à Olauncher v6.10.27 (v01)
 
 ```
 app/build.gradle                         identifiant, VERSION, signature
@@ -69,13 +102,14 @@ Aucun fichier à supprimer à la main. Aucune resynchronisation.
 
 ## Contrôles passés avant envoi
 
-- VERSION `v01_2026-10-30` (versionName de `app/build.gradle`) conforme à la forme
+- VERSION `v01a_2026-10-30` (versionName de `app/build.gradle`) conforme à la forme
   `vnn[lettre]_AAAA-MM-JJ` ; le nom de l'archive la reprend (script
   `scripts/verifier_version.sh`, rejoué aussi par GitHub sur le nom de l'APK).
 - Relecture complète du code ajouté.
-- **Non fait :** compilation. L'environnement où ce code a été écrit n'a pas accès
-  aux serveurs Android/Gradle ; la première compilation aura lieu sur GitHub. Si
-  elle échoue, l'onglet Actions affiche l'erreur : il suffit de la transmettre.
+- v01 compilée avec succès par GitHub et testée sur téléphone par François.
+- v01a : compilation faite par GitHub à l'envoi (l'environnement de rédaction
+  n'a pas accès aux serveurs Android) ; en cas d'échec, l'onglet Actions affiche
+  l'erreur.
 
 ## À savoir
 

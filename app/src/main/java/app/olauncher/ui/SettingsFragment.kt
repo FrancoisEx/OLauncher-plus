@@ -15,6 +15,8 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.bundleOf
@@ -42,6 +44,7 @@ import app.olauncher.helper.rateApp
 import app.olauncher.helper.setPlainWallpaper
 import app.olauncher.helper.shareApp
 import app.olauncher.helper.OlDialog
+import app.olauncher.helper.NotificationDotService
 import app.olauncher.helper.showPopupMenu
 import app.olauncher.helper.showStatusBar
 import app.olauncher.helper.showToast
@@ -78,6 +81,7 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
 
         binding.homeAppsNum.text = prefs.homeAppsNum.toString()
         binding.quickAppsNum.text = prefs.quickAppsNum.toString()
+        populateNotificationDots()
         binding.aboutOlauncher.text = "Olauncher+ " + BuildConfig.VERSION_NAME
         populateProMessage()
         populateKeyboardText()
@@ -114,6 +118,8 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
             R.id.autoShowKeyboard -> toggleKeyboardText()
             R.id.homeAppsNum -> showHomeAppsNumMenu(view)
             R.id.quickAppsNum -> showQuickAppsNumMenu(view)
+            R.id.reorderHomeApps -> showReorderDialog()
+            R.id.notificationDots -> toggleNotificationDots()
             R.id.dailyWallpaperUrl -> requireContext().openUrl(prefs.dailyWallpaperUrl)
             R.id.dailyWallpaper -> toggleDailyWallpaperUpdate()
             R.id.alignment -> showAlignmentMenu(view)
@@ -177,6 +183,8 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         // binding.homeButtonRecents.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.quickAppsNum.setOnClickListener(this)
+        binding.reorderHomeApps.setOnClickListener(this)
+        binding.notificationDots.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
         binding.dailyWallpaper.setOnClickListener(this)
@@ -243,6 +251,127 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
             prefs.quickAppsNum = item.itemId
             viewModel.refreshHome(false)
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // Olauncher+ : mode « Reorganiser les favoris »
+    // ---------------------------------------------------------------------
+
+    private fun showReorderDialog() {
+        val count = prefs.homeAppsNum
+        if (count < 2) {
+            requireContext().showToast(getString(R.string.reorder_needs_two_apps))
+            return
+        }
+        lateinit var list: LinearLayout
+        val dialog = requireContext().createDialog(R.string.reorder_home_apps, R.string.okay) { container ->
+            LinearLayout(container.context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = (12 * resources.displayMetrics.density).toInt() }
+                list = this
+            }
+        }
+        fillReorderList(list, count)
+        dialog.setOnDismissListener { viewModel.refreshHome(false) }
+        showDialog(dialog)
+    }
+
+    private fun fillReorderList(list: LinearLayout, count: Int) {
+        list.removeAllViews()
+        val context = list.context
+        val density = resources.displayMetrics.density
+        val textColor = context.getColorFromAttr(R.attr.primaryColor)
+        for (slot in 1..count) {
+            val row = LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+            val name = TextView(context, null, 0, R.style.TextSmall).apply {
+                text = prefs.getAppName(slot).ifEmpty { "\u2014" }
+                setTextColor(textColor)
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
+            }
+            row.addView(name, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            fun arrow(symbol: String, label: Int, enabled: Boolean, onClick: () -> Unit) =
+                TextView(context, null, 0, R.style.TextSmallBold).apply {
+                    text = symbol
+                    contentDescription = getString(label)
+                    setTextColor(textColor)
+                    alpha = if (enabled) 1f else 0.15f
+                    isEnabled = enabled
+                    val pad = (14 * density).toInt()
+                    setPadding(pad, (8 * density).toInt(), pad, (8 * density).toInt())
+                    if (enabled) setOnClickListener {
+                        onClick()
+                        fillReorderList(list, count)
+                    }
+                }
+            row.addView(arrow("\u25B2", R.string.move_up, slot > 1) { prefs.swapHomeApps(slot, slot - 1) })
+            row.addView(arrow("\u25BC", R.string.move_down, slot < count) { prefs.swapHomeApps(slot, slot + 1) })
+            list.addView(row)
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Olauncher+ : points de notification
+    // ---------------------------------------------------------------------
+
+    private fun toggleNotificationDots() {
+        val granted = NotificationDotService.isPermissionGranted(requireContext())
+        if (prefs.notificationDots && granted) {
+            prefs.notificationDots = false
+            populateNotificationDots()
+            viewModel.refreshHome(false)
+            return
+        }
+        prefs.notificationDots = true
+        if (granted) {
+            populateNotificationDots()
+            viewModel.refreshHome(false)
+            return
+        }
+        showDialog(
+            requireContext().createDialog(
+                title = R.string.notification_dots,
+                action = R.string.enable,
+                message = R.string.notification_dots_disclosure,
+                onAction = { openNotificationListenerSettings() },
+            )
+        )
+    }
+
+    private fun openNotificationListenerSettings() {
+        val component = NotificationDotService.componentName(requireContext())
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                startActivity(
+                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                        .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, component.flattenToString())
+                )
+                return
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        try {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun populateNotificationDots() {
+        val on = prefs.notificationDots && NotificationDotService.isPermissionGranted(requireContext())
+        binding.notificationDots.text = getString(if (on) R.string.on else R.string.off)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        populateNotificationDots()
     }
 
     private fun showDateTimeMenu(anchor: View) {

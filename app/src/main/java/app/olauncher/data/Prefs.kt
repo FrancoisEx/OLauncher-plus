@@ -698,4 +698,12 @@ class Prefs(context: Context) {
     }
 
     fun clearQuickApp(slot: Int) = setQuickApp(slot, "", "", "", "")
+
+    // ---------------------------------------------------------------------
+    // Olauncher+ : points de notification
+    // ---------------------------------------------------------------------
+
+    var notificationDots: Boolean
+        get() = prefs.getBoolean("NOTIFICATION_DOTS", false)
+        set(value) = prefs.edit { putBoolean("NOTIFICATION_DOTS", value) }
 }

@@ -183,4 +183,8 @@
     <string name="move_down">Move down</string>
     <string name="quick_apps">Quick icons</string>
     <string name="long_press_to_choose_quick_app">Long press to choose an app</string>
+    <string name="reorder_home_apps">Reorder home apps</string>
+    <string name="reorder_needs_two_apps">Show at least 2 apps on the home screen first</string>
+    <string name="notification_dots">Notification dots</string>
+    <string name="notification_dots_disclosure">To show a dot next to apps with unread notifications, Olauncher+ needs notification access. Only the app name is used, kept in memory and never shared. The content of your notifications is never read.\n\nIf the switch is greyed out: Settings › Apps › Olauncher+ › ⋮ › Allow restricted settings.</string>
 </resources>

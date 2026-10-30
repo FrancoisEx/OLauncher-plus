@@ -14,6 +14,11 @@ import android.provider.MediaStore
 import android.provider.Telephony
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.RelativeSizeSpan
+import app.olauncher.helper.DotDrawable
+import app.olauncher.helper.NotificationDotService
 import android.content.res.Configuration
 import android.os.BatteryManager
 import android.os.Build
@@ -64,6 +69,9 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     private lateinit var viewModel: MainViewModel
     private lateinit var deviceManager: DevicePolicyManager
 
+    // Olauncher+ : applis ayant une notification en attente
+    private var dotPackages: Set<String> = emptySet()
+
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
@@ -90,6 +98,16 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     override fun onResume() {
         super.onResume()
         populateHomeScreen(false)
+        // Olauncher+ : relancer l'ecoute des notifications si Android l'a coupee
+        if (dotsActive() && !NotificationDotService.connected) {
+            try {
+                android.service.notification.NotificationListenerService.requestRebind(
+                    NotificationDotService.componentName(requireContext())
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
         viewModel.isOlauncherDefault()
         if (prefs.showStatusBar) showStatusBar()
         else hideStatusBar()
@@ -204,6 +222,11 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
             if (binding.firstRunTips.isVisible) return@Observer
             binding.setDefaultLauncher.isVisible = it.not() && prefs.hideSetDefaultLauncher.not()
         })
+        // Olauncher+ : points de notification
+        NotificationDotService.packages.observe(viewLifecycleOwner) {
+            dotPackages = it
+            refreshNotificationDots()
+        }
         viewModel.homeAppAlignment.observe(viewLifecycleOwner) {
             setHomeAlignment(it)
         }
@@ -427,7 +450,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
                 val shortcuts = launcherApps.getShortcuts(query, userHandle)
                 // Check if our shortcut still exists
                 if (shortcuts?.any { it.id == shortcutId } == true) {
-                    textView.text = appName
+                    textView.text = labelWithDot(appName, packageName)
                     return true
                 }
                 textView.text = ""
@@ -441,7 +464,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
 
         // Regular app check
         if (isPackageInstalled(requireContext(), packageName, userString)) {
-            textView.text = appName
+            textView.text = labelWithDot(appName, packageName)
             return true
         }
         textView.text = ""
@@ -797,7 +820,9 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
                 view.setImageDrawable(icon)
                 view.alpha = 0.9f
                 view.contentDescription = prefs.getQuickAppLabel(slot)
+                applyQuickAppDot(view, packageName)
             } else {
+                view.foreground = null
                 // Emplacement vide : un « + » discret, appui long pour choisir l'appli
                 val plus = ContextCompat.getDrawable(requireContext(), android.R.drawable.ic_input_add)?.mutate()
                 plus?.colorFilter = PorterDuffColorFilter(textColor, PorterDuff.Mode.SRC_IN)
@@ -870,6 +895,56 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
             activityClassName = prefs.getQuickAppClassName(slot),
             userString = prefs.getQuickAppUser(slot)
         )
+    }
+
+    // =====================================================================
+    // Olauncher+ : points de notification
+    // =====================================================================
+
+    private fun dotsActive(): Boolean =
+        prefs.notificationDots && NotificationDotService.isPermissionGranted(requireContext())
+
+    /** Nom de l'appli suivi (ou precede, si alignement a droite) d'un petit point. */
+    private fun labelWithDot(appName: String, packageName: String): CharSequence {
+        if (!dotsActive() || packageName.isEmpty() || packageName !in dotPackages) return appName
+        val dot = "\u25CF"
+        val builder = SpannableStringBuilder()
+        if (prefs.homeAlignment == Gravity.END) {
+            builder.append(dot)
+            builder.setSpan(RelativeSizeSpan(0.4f), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            builder.append("  ").append(appName)
+        } else {
+            builder.append(appName).append("  ")
+            val start = builder.length
+            builder.append(dot)
+            builder.setSpan(RelativeSizeSpan(0.4f), start, start + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        return builder
+    }
+
+    private fun applyQuickAppDot(view: ImageView, packageName: String) {
+        view.foreground = if (dotsActive() && packageName in dotPackages)
+            DotDrawable(binding.homeApp1.currentTextColor, 3.5f * resources.displayMetrics.density)
+        else null
+    }
+
+    /** Met a jour les points sans recharger tout l'ecran d'accueil. */
+    private fun refreshNotificationDots() {
+        if (_binding == null) return
+        val homeViews = listOf(
+            binding.homeApp1, binding.homeApp2, binding.homeApp3, binding.homeApp4,
+            binding.homeApp5, binding.homeApp6, binding.homeApp7, binding.homeApp8
+        )
+        homeViews.forEachIndexed { index, view ->
+            val slot = index + 1
+            val name = prefs.getAppName(slot)
+            if (slot <= prefs.homeAppsNum && name.isNotEmpty() && view.text.isNotEmpty())
+                view.text = labelWithDot(name, prefs.getAppPackage(slot))
+        }
+        quickAppViews().forEachIndexed { index, view ->
+            val pkg = prefs.getQuickAppPackage(index + 1)
+            if (view.isVisible && pkg.isNotEmpty()) applyQuickAppDot(view, pkg)
+        }
     }
 
     override fun onDestroyView() {
