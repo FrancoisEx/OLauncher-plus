@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Olauncher+ : icone rapide « sms » (Material Symbols « chat_bubble », Apache 2.0) -->
+<!-- Olauncher+ : icone rapide « sms » (Material Symbols Rounded « chat_bubble », graisse 500, Apache 2.0) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -8,6 +8,6 @@
     <group android:translateY="960">
         <path
             android:fillColor="#FFFFFFFF"
-            android:pathData="M100-118.46v-683.85q0-23.53 17.08-40.61T157.69-860h644.62q23.53 0 40.61 17.08T860-802.31v484.62q0 23.53-17.08 40.61T802.31-260H241.54L100-118.46Zm121.69-186.93h580.62q4.61 0 8.46-3.84 3.84-3.85 3.84-8.46v-484.62q0-4.61-3.84-8.46-3.85-3.84-8.46-3.84H157.69q-4.61 0-8.46 3.84-3.84 3.85-3.84 8.46v577.69l76.3-80.77Zm-76.3 0v-509.22 509.22Z" />
+            android:pathData="M234.02-234.02 132.2-132.2q-16.16 16.16-37.17 7.45-21.01-8.7-21.01-31.08v-662.02q0-27.7 20.27-48.03 20.26-20.34 47.86-20.34h675.7q27.7 0 48.03 20.34 20.34 20.33 20.34 48.03v515.7q0 27.6-20.34 47.86-20.33 20.27-48.03 20.27H234.02Zm-26-68.13h609.83v-515.7h-675.7v587.57l65.87-71.87Zm-65.87 0v-515.7 515.7Z" />
     </group>
 </vector>

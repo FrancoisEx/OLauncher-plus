@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Olauncher+ : emplacement vide (Material Symbols « add », Apache 2.0) -->
+<!-- Olauncher+ : icone rapide « add » (Material Symbols Rounded « add », graisse 500, Apache 2.0) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -8,6 +8,6 @@
     <group android:translateY="960">
         <path
             android:fillColor="#FFFFFFFF"
-            android:pathData="M457.31-457.31H220v-45.38h237.31V-740h45.38v237.31H740v45.38H502.69V-220h-45.38v-237.31Z" />
+            android:pathData="M445.93-445.93H228.09q-14.43 0-24.25-9.88-9.82-9.87-9.82-24.37 0-14.49 9.82-24.19 9.82-9.7 24.25-9.7h217.84v-217.84q0-14.43 9.88-24.37 9.87-9.94 24.37-9.94 14.49 0 24.19 9.94 9.7 9.94 9.7 24.37v217.84h217.84q14.43 0 24.37 9.88 9.94 9.87 9.94 24.37 0 14.49-9.94 24.19-9.94 9.7-24.37 9.7H514.07v217.84q0 14.43-9.88 24.25-9.87 9.82-24.37 9.82-14.49 0-24.19-9.82-9.7-9.82-9.7-24.25v-217.84Z" />
     </group>
 </vector>

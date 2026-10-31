@@ -696,21 +696,26 @@ class Prefs(context: Context) {
     fun getQuickAppUser(slot: Int): String = prefs.getString("QUICK_APP_USER_$slot", "").toString()
     fun getQuickAppLabel(slot: Int): String = prefs.getString("QUICK_APP_LABEL_$slot", "").toString()
 
+    /** Pictogramme choisi a la main pour cet emplacement ; vide = choix automatique. */
+    fun getQuickAppIcon(slot: Int): String = prefs.getString("QUICK_APP_ICON_$slot", "").toString()
+    fun setQuickAppIcon(slot: Int, key: String) = prefs.edit { putString("QUICK_APP_ICON_$slot", key) }
+
     fun setQuickApp(slot: Int, label: String, packageName: String, className: String?, user: String) {
         prefs.edit {
             putString("QUICK_APP_LABEL_$slot", label)
             putString("QUICK_APP_PACKAGE_$slot", packageName)
             putString("QUICK_APP_CLASS_$slot", className ?: "")
             putString("QUICK_APP_USER_$slot", user)
+            putString("QUICK_APP_ICON_$slot", "") // nouvelle appli : pictogramme automatique
         }
     }
 
     fun clearQuickApp(slot: Int) = setQuickApp(slot, "", "", "", "")
 
-    /** Echange deux icones rapides (nom, appli, activite, profil). */
+    /** Echange deux icones rapides (nom, appli, activite, profil, pictogramme). */
     fun swapQuickApps(a: Int, b: Int) {
         if (a !in 1..5 || b !in 1..5 || a == b) return
-        val keys = listOf("QUICK_APP_LABEL_", "QUICK_APP_PACKAGE_", "QUICK_APP_CLASS_", "QUICK_APP_USER_")
+        val keys = listOf("QUICK_APP_LABEL_", "QUICK_APP_PACKAGE_", "QUICK_APP_CLASS_", "QUICK_APP_USER_", "QUICK_APP_ICON_")
         prefs.edit {
             for (k in keys) {
                 val va = prefs.getString(k + a, "")

@@ -1,7 +1,32 @@
-# Olauncher+ — v01b_2026-10-31
+# Olauncher+ — v01c_2026-10-31
 
-Version **mineure** : elle s'installe par-dessus la v01 ou la v01a, réglages
+Version **mineure** : elle s'installe par-dessus la v01, la v01a ou la v01b, réglages
 conservés. Rien à supprimer à la main, aucune resynchronisation.
+
+## Nouveautés de la v01c
+
+- **Trait plus épais** : les pictogrammes passent en Material Symbols *Rounded*,
+  graisse 500 (au lieu de *Outlined* 300) : plus lisibles, bouts arrondis.
+- **Navigateur** : globe plein à la place du globe quadrillé.
+- **Choisir soi-même le pictogramme** : Réglages › Écran d'accueil ›
+  « Personnaliser les icônes » (anciennement « Réorganiser les icônes »).
+  Chaque ligne commence par son pictogramme : le toucher ouvre la grille du pack
+  (31 pictogrammes), avec « Auto » en premier pour revenir au choix automatique.
+  Changer l'appli d'un emplacement remet son pictogramme en « Auto ».
+
+### Fichiers changés depuis la v01b
+
+```
+LISEZ-MOI.md
+app/build.gradle                         VERSION v01c, versionCode 118
+app/src/main/java/app/olauncher/data/Prefs.kt
+app/src/main/java/app/olauncher/helper/QuickIcons.kt
+app/src/main/java/app/olauncher/ui/HomeFragment.kt
+app/src/main/java/app/olauncher/ui/SettingsFragment.kt
+app/src/main/res/drawable/ic_quick_*.xml               (32, redessinés)
+app/src/main/res/values/strings.xml
+app/src/main/res/values-fr/strings.xml
+```
 
 ## Nouveautés de la v01b
 
@@ -18,8 +43,8 @@ conservés. Rien à supprimer à la main, aucune resynchronisation.
   menu Alignement est repris automatiquement, puis retiré de ce menu.
 - **Nom dans les Réglages** : le titre devient « Olauncher+, un fork de
   Olauncher », pour ne pas confondre ce lanceur avec l'original.
-- **Réorganiser les icônes** : Réglages › Écran d'accueil › « Réorganiser les
-  icônes » : même fenêtre ▲ / ▼ que pour les favoris.
+- **Réorganiser les icônes** : même fenêtre ▲ / ▼ que pour les favoris
+  (devenue « Personnaliser les icônes » en v01c).
 
 ### Fichiers changés depuis la v01a
 
@@ -139,13 +164,14 @@ Aucun fichier à supprimer à la main. Aucune resynchronisation.
 
 ## Contrôles passés avant envoi
 
-- VERSION `v01b_2026-10-31` (versionName de `app/build.gradle`) conforme à la forme
+- VERSION `v01c_2026-10-31` (versionName de `app/build.gradle`) conforme à la forme
   `vnn[lettre]_AAAA-MM-JJ` ; le nom de l'archive la reprend (script
   `scripts/verifier_version.sh`, rejoué aussi par GitHub sur le nom de l'APK).
 - Relecture complète du code ajouté.
 - v01 compilée avec succès par GitHub et testée sur téléphone par François.
 - v01a compilée par GitHub et testée sur téléphone par François.
-- v01b : compilation faite par GitHub à l'envoi (l'environnement de rédaction
+- v01b compilée par GitHub et installée sur téléphone par François.
+- v01c : compilation faite par GitHub à l'envoi (l'environnement de rédaction
   n'a pas accès aux serveurs Android) ; en cas d'échec, l'onglet Actions affiche
   l'erreur.
 

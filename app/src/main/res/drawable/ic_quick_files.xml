@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Olauncher+ : icone rapide « files » (Material Symbols « folder », Apache 2.0) -->
+<!-- Olauncher+ : icone rapide « files » (Material Symbols Rounded « folder », graisse 500, Apache 2.0) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -8,6 +8,6 @@
     <group android:translateY="960">
         <path
             android:fillColor="#FFFFFFFF"
-            android:pathData="M157.69-180q-23.53 0-40.61-17.35Q100-214.69 100-237.69v-484.62q0-23 17.08-40.34Q134.16-780 157.69-780h249.46l65.39 65.39h329.77q23 0 40.34 17.34Q860-679.92 860-656.92v419.23q0 23-17.35 40.34Q825.31-180 802.31-180H157.69Zm0-45.39h644.62q5.38 0 8.84-3.46t3.46-8.84v-419.23q0-5.39-3.46-8.85t-8.84-3.46H454.08l-65.39-65.38h-231q-5.38 0-8.84 3.46t-3.46 8.84v484.62q0 5.38 3.46 8.84t8.84 3.46Zm-12.3 0v-509.22 509.22Z" />
+            android:pathData="M142.15-154.02q-27.6 0-47.86-20.77-20.27-20.76-20.27-47.36v-515.7q0-26.7 20.27-47.53 20.26-20.84 47.86-20.84h247.87q13.94 0 26.74 5.72 12.81 5.72 22.09 15l42.26 42.15h336.74q26.7 0 47.53 20.77 20.84 20.76 20.84 47.36v453.07q0 26.6-20.84 47.36-20.83 20.77-47.53 20.77h-675.7Zm0-68.13h675.7v-453.07h-365.2l-62.63-62.63H142.15v515.7Zm0 0v-515.7 515.7Z" />
     </group>
 </vector>

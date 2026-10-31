@@ -18,6 +18,9 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import app.olauncher.helper.QuickIcons
+import android.graphics.drawable.Drawable
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.bundleOf
 import androidx.lifecycle.ViewModelProvider
@@ -292,22 +295,96 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         )
     }
 
-    /** Olauncher+ : meme fenetre, meme geste que pour les favoris. */
+    /**
+     * Olauncher+ : meme fenetre, meme geste que pour les favoris ; en plus, toucher le
+     * pictogramme d'une ligne permet d'en choisir un autre dans le pack.
+     */
     private fun showReorderQuickAppsDialog() {
         val count = prefs.quickAppsNum.coerceIn(0, 5)
-        if (count < 2) {
-            requireContext().showToast(getString(R.string.reorder_needs_two_icons))
+        if (count < 1) {
+            requireContext().showToast(getString(R.string.reorder_needs_one_icon))
             return
         }
         showReorderList(
             title = R.string.reorder_quick_apps,
             count = count,
             name = { slot -> prefs.getQuickAppLabel(slot) },
-            swap = { a, b -> prefs.swapQuickApps(a, b) }
+            swap = { a, b -> prefs.swapQuickApps(a, b) },
+            icon = { slot, color ->
+                val pkg = prefs.getQuickAppPackage(slot)
+                if (pkg.isEmpty()) null
+                else QuickIcons.iconFor(requireContext(), pkg, prefs.getQuickAppLabel(slot), color, prefs.getQuickAppIcon(slot))
+            },
+            onIconClick = { slot -> showQuickIconPicker(slot) }
         )
     }
 
-    private fun showReorderList(title: Int, count: Int, name: (Int) -> String, swap: (Int, Int) -> Unit) {
+    /** Grille du pack : « Auto » en premier, puis les pictogrammes. */
+    private fun showQuickIconPicker(slot: Int) {
+        val current = prefs.getQuickAppIcon(slot)
+        val density = resources.displayMetrics.density
+        lateinit var picker: OlDialog
+        picker = requireContext().createDialog(R.string.choose_icon, R.string.okay) { container ->
+            val context = container.context
+            val color = context.getColorFromAttr(R.attr.primaryColor)
+            val perRow = 6
+            val cell = (44 * density).toInt()
+            val grid = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = (12 * density).toInt() }
+            }
+            fun choose(key: String) {
+                prefs.setQuickAppIcon(slot, key)
+                picker.setOnDismissListener(null)
+                picker.dismiss()
+                viewModel.refreshHome(false)
+                showReorderQuickAppsDialog()
+            }
+            val cells = mutableListOf<View>()
+            cells += TextView(context, null, 0, R.style.TextSmallBold).apply {
+                text = getString(R.string.icon_auto)
+                gravity = Gravity.CENTER
+                setTextColor(color)
+                alpha = if (current.isEmpty()) 1f else 0.45f
+                contentDescription = getString(R.string.icon_auto)
+                setOnClickListener { choose("") }
+            }
+            for ((key, _) in QuickIcons.pack) {
+                cells += ImageView(context).apply {
+                    setImageDrawable(QuickIcons.packIcon(context, key, color))
+                    val pad = (10 * density).toInt()
+                    setPadding(pad, pad, pad, pad)
+                    alpha = if (key == current) 1f else 0.45f
+                    background = if (key == current)
+                        android.graphics.drawable.GradientDrawable().apply {
+                            shape = android.graphics.drawable.GradientDrawable.OVAL
+                            setStroke((1.5f * density).toInt(), color)
+                        } else null
+                    contentDescription = key
+                    setOnClickListener { choose(key) }
+                }
+            }
+            cells.chunked(perRow).forEach { rowCells ->
+                val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+                rowCells.forEach { row.addView(it, LinearLayout.LayoutParams(cell, cell)) }
+                grid.addView(row)
+            }
+            grid
+        }
+        picker.setOnDismissListener { showReorderQuickAppsDialog() }
+        showDialog(picker)
+    }
+
+    private fun showReorderList(
+        title: Int,
+        count: Int,
+        name: (Int) -> String,
+        swap: (Int, Int) -> Unit,
+        icon: ((Int, Int) -> Drawable?)? = null,
+        onIconClick: (Int) -> Unit = {},
+    ) {
         lateinit var list: LinearLayout
         val dialog = requireContext().createDialog(title, R.string.okay) { container ->
             LinearLayout(container.context).apply {
@@ -318,12 +395,19 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
                 list = this
             }
         }
-        fillReorderList(list, count, name, swap)
+        fillReorderList(list, count, name, swap, icon, onIconClick)
         dialog.setOnDismissListener { viewModel.refreshHome(false) }
         showDialog(dialog)
     }
 
-    private fun fillReorderList(list: LinearLayout, count: Int, name: (Int) -> String, swap: (Int, Int) -> Unit) {
+    private fun fillReorderList(
+        list: LinearLayout,
+        count: Int,
+        name: (Int) -> String,
+        swap: (Int, Int) -> Unit,
+        icon: ((Int, Int) -> Drawable?)? = null,
+        onIconClick: (Int) -> Unit = {},
+    ) {
         list.removeAllViews()
         val context = list.context
         val density = resources.displayMetrics.density
@@ -332,6 +416,16 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
             val row = LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
+            }
+            if (icon != null) {
+                val size = (40 * density).toInt()
+                val pad = (9 * density).toInt()
+                row.addView(ImageView(context).apply {
+                    setImageDrawable(icon(slot, textColor))
+                    setPadding(0, pad, (2 * pad), pad)
+                    contentDescription = getString(R.string.choose_icon)
+                    setOnClickListener { onIconClick(slot) }
+                }, LinearLayout.LayoutParams(size + 2 * pad, size))
             }
             val label = TextView(context, null, 0, R.style.TextSmall).apply {
                 text = name(slot).ifEmpty { "\u2014" }
@@ -352,7 +446,7 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
                     setPadding(pad, (8 * density).toInt(), pad, (8 * density).toInt())
                     if (enabled) setOnClickListener {
                         onClick()
-                        fillReorderList(list, count, name, swap)
+                        fillReorderList(list, count, name, swap, icon, onIconClick)
                     }
                 }
             row.addView(arrow("\u25B2", R.string.move_up, slot > 1) { swap(slot, slot - 1) })

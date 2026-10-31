@@ -852,7 +852,10 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
             if (installed) {
                 // Icone au trait d'un meme jeu, choisie selon le role de l'appli
                 view.setImageDrawable(
-                    QuickIcons.iconFor(requireContext(), packageName, prefs.getQuickAppLabel(slot), textColor)
+                    QuickIcons.iconFor(
+                        requireContext(), packageName, prefs.getQuickAppLabel(slot), textColor,
+                        prefs.getQuickAppIcon(slot)
+                    )
                 )
                 view.alpha = 0.9f
                 view.contentDescription = prefs.getQuickAppLabel(slot)

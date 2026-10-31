@@ -154,11 +154,13 @@
     <string name="reorder_needs_two_apps">Affichez d\'abord au moins 2 applications sur l\'écran d\'accueil</string>
     <string name="notification_dots">Points de notification</string>
     <string name="notification_dots_disclosure">Pour afficher un point à côté des applications qui ont une notification non lue, Olauncher+ a besoin de l\'accès aux notifications. Seul le nom de l\'application est utilisé, gardé en mémoire et jamais partagé. Le contenu de vos notifications n\'est jamais lu.\n\nSi l\'interrupteur est grisé : Paramètres › Applications › Olauncher+ › ⋮ › Autoriser les paramètres restreints.</string>
-    <string name="reorder_quick_apps">Réorganiser les icônes</string>
-    <string name="reorder_needs_two_icons">Affichez d\'abord au moins 2 icônes rapides</string>
+    <string name="reorder_quick_apps">Personnaliser les icônes</string>
     <string name="vertical_position">Position verticale</string>
     <string name="top">Haut</string>
     <string name="middle">Milieu</string>
     <string name="bottom">Bas</string>
     <string name="fork_of_olauncher">, un fork de Olauncher</string>
+    <string name="reorder_needs_one_icon">Affichez d\'abord au moins 1 icône rapide</string>
+    <string name="choose_icon">Choisir le pictogramme</string>
+    <string name="icon_auto">Auto</string>
 </resources><!-- French -->

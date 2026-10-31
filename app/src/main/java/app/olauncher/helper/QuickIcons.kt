@@ -36,8 +36,56 @@ object QuickIcons {
 
     private val cache = HashMap<String, Int>()
 
-    /** Icone au trait, deja teintee de la couleur du texte de l'accueil. */
-    fun iconFor(context: Context, packageName: String, label: String, color: Int): Drawable {
+    /**
+     * Le pack de pictogrammes, dans l'ordre de la grille de choix. La cle est enregistree
+     * dans les reglages : ne jamais renommer une cle existante.
+     */
+    val pack: List<Pair<String, Int>> = listOf(
+        "phone" to R.drawable.ic_quick_phone,
+        "sms" to R.drawable.ic_quick_sms,
+        "chat" to R.drawable.ic_quick_chat,
+        "mail" to R.drawable.ic_quick_mail,
+        "contacts" to R.drawable.ic_quick_contacts,
+        "camera" to R.drawable.ic_quick_camera,
+        "gallery" to R.drawable.ic_quick_gallery,
+        "browser" to R.drawable.ic_quick_browser,
+        "search" to R.drawable.ic_quick_search,
+        "music" to R.drawable.ic_quick_music,
+        "podcasts" to R.drawable.ic_quick_podcasts,
+        "video" to R.drawable.ic_quick_video,
+        "recorder" to R.drawable.ic_quick_recorder,
+        "maps" to R.drawable.ic_quick_maps,
+        "transport" to R.drawable.ic_quick_transport,
+        "weather" to R.drawable.ic_quick_weather,
+        "calendar" to R.drawable.ic_quick_calendar,
+        "clock" to R.drawable.ic_quick_clock,
+        "notes" to R.drawable.ic_quick_notes,
+        "calculator" to R.drawable.ic_quick_calculator,
+        "files" to R.drawable.ic_quick_files,
+        "cloud" to R.drawable.ic_quick_cloud,
+        "news" to R.drawable.ic_quick_news,
+        "books" to R.drawable.ic_quick_books,
+        "bank" to R.drawable.ic_quick_bank,
+        "shopping" to R.drawable.ic_quick_shopping,
+        "fitness" to R.drawable.ic_quick_fitness,
+        "games" to R.drawable.ic_quick_games,
+        "work" to R.drawable.ic_quick_work,
+        "passwords" to R.drawable.ic_quick_passwords,
+        "settings" to R.drawable.ic_quick_settings,
+    )
+
+    /** Icone d'une cle du pack, teintee ; null si la cle est inconnue. */
+    fun packIcon(context: Context, key: String, color: Int): Drawable? {
+        val res = pack.firstOrNull { it.first == key }?.second ?: return null
+        return ContextCompat.getDrawable(context, res)?.mutate()?.apply { setTint(color) }
+    }
+
+    /**
+     * Icone au trait, deja teintee de la couleur du texte de l'accueil.
+     * [override] : cle du pack choisie a la main (vide = choix automatique).
+     */
+    fun iconFor(context: Context, packageName: String, label: String, color: Int, override: String = ""): Drawable {
+        if (override.isNotEmpty()) packIcon(context, override, color)?.let { return it }
         val res = cache.getOrPut(packageName) { detect(context, packageName, label) }
         val drawable = if (res != 0) ContextCompat.getDrawable(context, res)?.mutate() else null
         if (drawable != null) {
@@ -180,13 +228,13 @@ object QuickIcons {
     private class InitialDrawable(private val letter: Char, color: Int, private val density: Float) : Drawable() {
         private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 1.4f * density
+            strokeWidth = 2f * density
             this.color = color
         }
         private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             this.color = color
             textAlign = Paint.Align.CENTER
-            typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         }
         private val bounds = Rect()
 
@@ -198,6 +246,8 @@ object QuickIcons {
             val size = minOf(b.width(), b.height()).toFloat()
             val cx = b.exactCenterX()
             val cy = b.exactCenterY()
+            // Meme epaisseur que les pictogrammes (graisse 500 : environ 2,2 / 24 de la boite)
+            stroke.strokeWidth = size * 2.2f / 24f
             // Meme encombrement que les icones Material : cercle de 20/24 de la boite
             canvas.drawCircle(cx, cy, size * 10f / 24f - stroke.strokeWidth / 2, stroke)
             text.textSize = size * 11f / 24f
