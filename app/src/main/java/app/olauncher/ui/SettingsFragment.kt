@@ -12,7 +12,6 @@ import android.os.Process
 import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -242,24 +241,62 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
 
     // Popup menus
 
-    private fun showHomeAppsNumMenu(anchor: View) {
-        anchor.showPopupMenu(
-            configure = { menu ->
-                for (num in 0..8) menu.add(Menu.NONE, num, num, num.toString())
-            }
-        ) { item -> updateHomeAppsNum(item.itemId) }
+    // Olauncher+ : un petit selecteur 0..8 a la place du menu deroulant, qui debordait
+    // de l'ecran (impossible de choisir 8 quand la ligne est basse dans les Reglages).
+    private fun showHomeAppsNumMenu(@Suppress("UNUSED_PARAMETER") anchor: View) {
+        showNumberPicker(R.string.apps_on_home_screen, 0..8, prefs.homeAppsNum) { updateHomeAppsNum(it) }
     }
 
-    private fun showQuickAppsNumMenu(anchor: View) {
-        anchor.showPopupMenu(
-            configure = { menu ->
-                for (num in 0..5) menu.add(Menu.NONE, num, num, num.toString())
-            }
-        ) { item ->
-            binding.quickAppsNum.text = item.itemId.toString()
-            prefs.quickAppsNum = item.itemId
+    private fun showQuickAppsNumMenu(@Suppress("UNUSED_PARAMETER") anchor: View) {
+        showNumberPicker(R.string.quick_apps, 0..5, prefs.quickAppsNum) {
+            binding.quickAppsNum.text = it.toString()
+            prefs.quickAppsNum = it
             viewModel.refreshHome(false)
         }
+    }
+
+    /** Fenetre avec les nombres sur une ligne ; le nombre actuel est entoure. */
+    private fun showNumberPicker(title: Int, range: IntRange, current: Int, onPick: (Int) -> Unit) {
+        val density = resources.displayMetrics.density
+        lateinit var picker: OlDialog
+        picker = requireContext().createDialog(title, R.string.okay) { container ->
+            val context = container.context
+            val color = context.getColorFromAttr(R.attr.primaryColor)
+            val cell = (36 * density).toInt()
+            val perRow = 5
+            val grid = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = (12 * density).toInt() }
+            }
+            range.toList().chunked(perRow).forEach { numbers ->
+                val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+                numbers.forEach { num ->
+                    row.addView(TextView(context, null, 0, R.style.TextSmallBold).apply {
+                        text = num.toString()
+                        gravity = Gravity.CENTER
+                        setTextColor(color)
+                        alpha = if (num == current) 1f else 0.6f
+                        background = if (num == current)
+                            android.graphics.drawable.GradientDrawable().apply {
+                                shape = android.graphics.drawable.GradientDrawable.OVAL
+                                setStroke((1.5f * density).toInt(), color)
+                            } else null
+                        setOnClickListener {
+                            onPick(num)
+                            picker.dismiss()
+                        }
+                    }, LinearLayout.LayoutParams(cell, cell).apply {
+                        val m = (4 * density).toInt()
+                        setMargins(m, m, m, m)
+                    })
+                }
+                grid.addView(row)
+            }
+            grid
+        }
+        showDialog(picker)
     }
 
     // ---------------------------------------------------------------------

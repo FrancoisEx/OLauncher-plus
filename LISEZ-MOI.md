@@ -1,6 +1,10 @@
-# Olauncher+ — v02b_2026-10-31
+# Olauncher+ — v02c_2026-10-31
 
-## Correctifs v02a et v02b (s'installent par-dessus la v02, rien d'autre à faire)
+## Correctifs v02a à v02c (s'installent par-dessus la v02, rien d'autre à faire)
+
+- Réglages › « Applis sur l'accueil » et « Icônes rapides » : le menu déroulant
+  des nombres débordait de l'écran (8 inaccessible). Il est remplacé par une
+  petite fenêtre où tous les nombres sont visibles, l'actuel entouré (v02c).
 
 - Fenêtre d'un dossier : le **clavier ne s'ouvrait pas** en touchant le nom du
   dossier ou d'un élément (le texte se sélectionnait seulement : « copier,
@@ -12,6 +16,7 @@
 
 Fichiers changés depuis la v02 : `LISEZ-MOI.md`, `app/build.gradle`,
 `app/src/main/java/app/olauncher/ui/HomeFragment.kt`,
+`app/src/main/java/app/olauncher/ui/SettingsFragment.kt` (v02c),
 `app/src/main/res/values/strings.xml`, `app/src/main/res/values-fr/strings.xml`.
 
 ---
@@ -226,7 +231,7 @@ Aucun fichier à supprimer à la main. Aucune resynchronisation.
 
 ## Contrôles passés avant envoi
 
-- VERSION `v02b_2026-10-31` (versionName de `app/build.gradle`) conforme à la forme
+- VERSION `v02c_2026-10-31` (versionName de `app/build.gradle`) conforme à la forme
   `vnn[lettre]_AAAA-MM-JJ` ; le nom de l'archive la reprend (script
   `scripts/verifier_version.sh`, rejoué aussi par GitHub sur le nom de l'APK).
 - Relecture complète du code ajouté.
@@ -236,7 +241,8 @@ Aucun fichier à supprimer à la main. Aucune resynchronisation.
 - v01c compilée par GitHub et installée sur téléphone par François.
 - v02 compilée par GitHub et essayée sur téléphone par François.
 - v02a compilée par GitHub ; essai : le clavier ne s'ouvrait toujours pas.
-- v02b : compilation faite par GitHub à l'envoi (l'environnement de rédaction
+- v02b compilée par GitHub et validée sur téléphone par François (clavier).
+- v02c : compilation faite par GitHub à l'envoi (l'environnement de rédaction
   n'a pas accès aux serveurs Android) ; en cas d'échec, l'onglet Actions affiche
   l'erreur.
 
