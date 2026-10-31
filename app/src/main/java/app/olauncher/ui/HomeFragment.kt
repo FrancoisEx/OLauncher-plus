@@ -1172,6 +1172,14 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
                         android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
                     background = null
                     setPadding(0, dp(8), 0, dp(8))
+                    // Construit avec le style texte d'Olauncher (et non le style « champ de
+                    // saisie » d'Android) : il faut redonner explicitement au champ le droit de
+                    // prendre le focus au toucher, sans quoi le clavier ne vient jamais (v02b).
+                    isFocusable = true
+                    isFocusableInTouchMode = true
+                    isClickable = true
+                    isLongClickable = true
+                    isCursorVisible = true
                     // Le clavier ne s'ouvrait pas : la fenetre, ouverte « non focalisable »
                     // pour ne pas faire reapparaitre la barre d'etat, bloquait la saisie.
                     // On la rend saisissable et on demande le clavier au toucher.
