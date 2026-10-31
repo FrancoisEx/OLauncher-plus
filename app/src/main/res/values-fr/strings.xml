@@ -172,4 +172,5 @@
     <string name="folder_full">10 éléments au maximum</string>
     <string name="folder_undo">Défaire ce dossier</string>
     <string name="folder_undo_confirm">Toucher à nouveau pour confirmer (son contenu sera perdu)</string>
+    <string name="folder_name_caption">Nom du dossier (toucher pour modifier)</string>
 </resources><!-- French -->

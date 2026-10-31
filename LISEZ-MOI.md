@@ -1,4 +1,18 @@
-# Olauncher+ — v02_2026-10-31
+# Olauncher+ — v02a_2026-10-31
+
+## Correctif v02a (s'installe par-dessus la v02, rien d'autre à faire)
+
+- Fenêtre d'un dossier : le **clavier ne s'ouvrait pas** en touchant le nom du
+  dossier ou d'un élément. Corrigé.
+- Une petite légende « Nom du dossier (toucher pour modifier) » signale que la
+  première ligne se modifie.
+
+Fichiers changés depuis la v02 : `LISEZ-MOI.md`, `app/build.gradle`,
+`app/src/main/java/app/olauncher/ui/HomeFragment.kt`,
+`app/src/main/res/values/strings.xml`, `app/src/main/res/values-fr/strings.xml`.
+
+---
+
 
 Version **majeure** : à lire en entier. Elle s'installe toujours **par-dessus**
 la v01, v01a, v01b ou v01c, sans rien perdre (favoris, icônes, réglages).
@@ -209,7 +223,7 @@ Aucun fichier à supprimer à la main. Aucune resynchronisation.
 
 ## Contrôles passés avant envoi
 
-- VERSION `v02_2026-10-31` (versionName de `app/build.gradle`) conforme à la forme
+- VERSION `v02a_2026-10-31` (versionName de `app/build.gradle`) conforme à la forme
   `vnn[lettre]_AAAA-MM-JJ` ; le nom de l'archive la reprend (script
   `scripts/verifier_version.sh`, rejoué aussi par GitHub sur le nom de l'APK).
 - Relecture complète du code ajouté.
@@ -217,7 +231,8 @@ Aucun fichier à supprimer à la main. Aucune resynchronisation.
 - v01a compilée par GitHub et testée sur téléphone par François.
 - v01b compilée par GitHub et installée sur téléphone par François.
 - v01c compilée par GitHub et installée sur téléphone par François.
-- v02 : compilation faite par GitHub à l'envoi (l'environnement de rédaction
+- v02 compilée par GitHub et essayée sur téléphone par François.
+- v02a : compilation faite par GitHub à l'envoi (l'environnement de rédaction
   n'a pas accès aux serveurs Android) ; en cas d'échec, l'onglet Actions affiche
   l'erreur.
 

@@ -1110,6 +1110,22 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     // Fenetre de gestion d'un dossier : nom, elements (renommer, ▲ ▼ ✕), ajout, defaire
     // ---------------------------------------------------------------------
 
+    private fun openKeyboard(dialog: OlDialog, field: View) {
+        dialog.window?.apply {
+            clearFlags(
+                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
+            )
+            setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
+        field.requestFocus()
+        field.postDelayed({
+            val imm = field.context.getSystemService(Context.INPUT_METHOD_SERVICE) as
+                android.view.inputmethod.InputMethodManager
+            imm.showSoftInput(field, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        }, 100)
+    }
+
     private fun showFolderDialog(slot: Int) {
         val folderId = prefs.getFolderId(slot)
         if (folderId.isEmpty()) return
@@ -1138,6 +1154,8 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
 
             val root = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
+                // Prend le focus a l'ouverture : le clavier ne surgit qu'au toucher d'un nom
+                isFocusableInTouchMode = true
                 layoutParams = ViewGroup.MarginLayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
                 ).apply { topMargin = dp(8) }
@@ -1154,8 +1172,19 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
                         android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
                     background = null
                     setPadding(0, dp(8), 0, dp(8))
+                    // Le clavier ne s'ouvrait pas : la fenetre, ouverte « non focalisable »
+                    // pour ne pas faire reapparaitre la barre d'etat, bloquait la saisie.
+                    // On la rend saisissable et on demande le clavier au toucher.
+                    setOnFocusChangeListener { v, hasFocus -> if (hasFocus) openKeyboard(dialog, v) }
+                    setOnClickListener { v -> openKeyboard(dialog, v) }
                 }
 
+            root.addView(TextView(context, null, 0, R.style.TextSmall).apply {
+                text = getString(R.string.folder_name_caption)
+                setTextColor(color)
+                alpha = 0.5f
+                textSize = 12f
+            })
             nameEdit = plainEdit(R.style.TextSmallBold, prefs.getAppName(slot), R.string.folder_name_hint)
             root.addView(nameEdit)
             root.addView(View(context).apply {

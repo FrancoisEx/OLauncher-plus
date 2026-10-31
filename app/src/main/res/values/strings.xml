@@ -205,4 +205,5 @@
     <string name="folder_full">10 items maximum</string>
     <string name="folder_undo">Undo this folder</string>
     <string name="folder_undo_confirm">Tap again to confirm (its content will be lost)</string>
+    <string name="folder_name_caption">Folder name (tap to edit)</string>
 </resources>
