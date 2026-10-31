@@ -49,6 +49,20 @@
             android:textAllCaps="true"
             android:visibility="gone" />
 
+        <!-- Olauncher+ : transformer ce favori en dossier -->
+        <TextView
+            android:id="@+id/makeFolder"
+            style="@style/TextSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="@dimen/app_padding_vertical"
+            android:text="@string/make_folder"
+            android:textAllCaps="true"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/moveUp"
             style="@style/TextSmall"

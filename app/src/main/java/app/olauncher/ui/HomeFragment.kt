@@ -16,6 +16,12 @@ import android.text.Spanned
 import android.text.style.RelativeSizeSpan
 import app.olauncher.helper.DotDrawable
 import app.olauncher.helper.QuickIcons
+import app.olauncher.helper.getColorFromAttr
+import app.olauncher.helper.createDialog
+import app.olauncher.helper.OlDialog
+import android.widget.LinearLayout
+import android.widget.EditText
+import androidx.activity.OnBackPressedCallback
 import app.olauncher.helper.NotificationDotService
 import android.content.res.Configuration
 import android.os.BatteryManager
@@ -89,6 +95,8 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         deviceManager = context?.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
         initObservers()
+        // Olauncher+ : « retour » referme un dossier ouvert (sinon, comportement d'origine)
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, folderBackCallback)
         setHomeAlignment(prefs.homeAlignment)
         initSwipeTouchListener()
         initClickListeners()
@@ -97,6 +105,12 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     override fun onResume() {
         super.onResume()
         populateHomeScreen(false)
+        // Olauncher+ : rouvrir la fenetre d'un dossier (apres sa creation ou un ajout)
+        val pending = prefs.pendingFolderEdit
+        if (pending != 0) {
+            prefs.pendingFolderEdit = 0
+            if (prefs.isFolder(pending)) showFolderDialog(pending)
+        }
         // Olauncher+ : relancer l'ecoute des notifications si Android l'a coupee
         if (dotsActive() && !NotificationDotService.connected) {
             try {
@@ -158,6 +172,12 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     override fun onLongClick(view: View): Boolean {
+        // Olauncher+ : appui long sur un dossier = sa fenetre de gestion
+        val folderSlot = homeSlotOf(view)
+        if (folderSlot != 0 && prefs.isFolder(folderSlot)) {
+            showFolderDialog(folderSlot)
+            return true
+        }
         when (view.id) {
             R.id.homeApp1 -> showAppList(Constants.FLAG_SET_HOME_APP_1, prefs.appName1.isNotEmpty(), true)
             R.id.homeApp2 -> showAppList(Constants.FLAG_SET_HOME_APP_2, prefs.appName2.isNotEmpty(), true)
@@ -394,6 +414,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun populateHomeScreen(appCountUpdated: Boolean) {
+        removeFolderViews()
         if (appCountUpdated) hideHomeApps()
         populateDateTime()
 
@@ -469,6 +490,12 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         isShortcut: Boolean,
         shortcutId: String?,
     ): Boolean {
+        // Olauncher+ : un dossier n'a pas d'appli a verifier
+        val slot = homeSlotOf(textView)
+        if (slot != 0 && prefs.isFolder(slot)) {
+            textView.text = folderLabel(appName)
+            return true
+        }
         // Get user handle for the app/shortcut
         val userHandle = getUserHandleFromString(requireContext(), userString)
 
@@ -579,6 +606,10 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun homeAppClicked(location: Int) {
+        if (prefs.isFolder(location)) {
+            openFolder(location)
+            return
+        }
         launchAppOrShortcut(
             appName = prefs.getAppName(location),
             packageName = prefs.getAppPackage(location),
@@ -763,6 +794,10 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
 
             override fun onClick() {
                 super.onClick()
+                if (openFolderSlot != 0) {
+                    closeFolder()
+                    return
+                }
                 viewModel.checkForMessages.call()
             }
         }
@@ -924,6 +959,318 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     // =====================================================================
+    // Olauncher+ : dossiers
+    // Un favori peut etre un dossier : le toucher remplace la liste des favoris par son
+    // contenu (applis et sites), au meme endroit et dans le meme style. Retour, un toucher
+    // dans le vide ou la ligne « ‹ Nom » le referment. Appui long : fenetre de gestion.
+    // =====================================================================
+
+    private var openFolderSlot = 0
+    private val folderViews = mutableListOf<View>()
+    private var folderDialog: OlDialog? = null
+
+    private val folderBackCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = closeFolder()
+    }
+
+    private fun homeAppViews(): List<TextView> = listOf(
+        binding.homeApp1, binding.homeApp2, binding.homeApp3, binding.homeApp4,
+        binding.homeApp5, binding.homeApp6, binding.homeApp7, binding.homeApp8
+    )
+
+    /** Emplacement 1..8 d'une vue de favori, 0 pour toute autre vue. */
+    private fun homeSlotOf(view: View): Int {
+        if (_binding == null) return 0
+        val index = homeAppViews().indexOf(view)
+        return if (index >= 0) index + 1 else 0
+    }
+
+    /** Nom d'un dossier sur l'accueil, suivi d'un discret « › ». */
+    private fun folderLabel(name: String): CharSequence {
+        val builder = SpannableStringBuilder(name).append("  ")
+        val start = builder.length
+        builder.append("›")
+        builder.setSpan(RelativeSizeSpan(0.7f), start, start + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        return builder
+    }
+
+    private fun visibleFolderItems(slot: Int): List<Prefs.FolderItem> =
+        prefs.getFolderItems(prefs.getFolderId(slot)).filter {
+            it.isShortcut || isPackageInstalled(requireContext(), it.packageName, it.user)
+        }
+
+    private fun openFolder(slot: Int) {
+        val items = visibleFolderItems(slot)
+        if (items.isEmpty()) {
+            // Dossier vide : on passe directement a sa fenetre pour le remplir
+            showFolderDialog(slot)
+            return
+        }
+        removeFolderViews()
+        openFolderSlot = slot
+        folderBackCallback.isEnabled = true
+        homeAppViews().forEach { it.visibility = View.GONE }
+
+        val context = requireContext()
+        val gravity = prefs.homeAlignment
+        val layout = binding.homeAppsLayout
+        val padding = resources.getDimensionPixelSize(R.dimen.home_app_padding_vertical)
+
+        val header = TextView(context, null, 0, R.style.TextSmall).apply {
+            text = if (gravity == Gravity.END) prefs.getAppName(slot) + "  ›"
+            else "‹  " + prefs.getAppName(slot)
+            this.gravity = gravity
+            alpha = 0.6f
+            setPadding(0, 0, 0, padding)
+            setOnClickListener { closeFolder() }
+            setOnLongClickListener { showFolderDialog(slot); true }
+        }
+        layout.addView(header, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+        folderViews += header
+
+        val itemViews = items.map { item ->
+            TextView(context, null, 0, R.style.TextLarge).apply {
+                text = labelWithDot(item.label, item.packageName)
+                this.gravity = gravity
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setPadding(0, padding, 0, padding)
+                isFocusable = true
+                setOnTouchListener(object : ViewSwipeTouchListener(context, this) {
+                    override fun onSwipeUp() = showAppList(Constants.FLAG_LAUNCH_APP)
+                    override fun onSwipeDown() = expandNotificationDrawer(requireContext())
+                    override fun onLongClick(view: View) = showFolderDialog(slot)
+                    override fun onClick(view: View) = launchFolderItem(item)
+                })
+                setOnClickListener { launchFolderItem(item) }
+            }
+        }
+        itemViews.forEach {
+            layout.addView(it, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ))
+        }
+        folderViews += itemViews
+        fitFolderToScreen(header, itemViews)
+    }
+
+    /**
+     * Le dossier doit tenir a l'ecran : si ses lignes depassent la place disponible, on
+     * resserre d'abord l'espacement, puis, si besoin, on reduit la taille du texte.
+     */
+    private fun fitFolderToScreen(header: TextView, items: List<TextView>) {
+        val layout = binding.homeAppsLayout
+        layout.doOnLayout {
+            if (_binding == null || openFolderSlot == 0 || items.isEmpty()) return@doOnLayout
+            val available = layout.height - layout.paddingTop - layout.paddingBottom
+            val total = header.height + items.sumOf { it.height }
+            if (total <= available) return@doOnLayout
+            val n = items.size
+            val pad = items[0].paddingTop
+            val textHeight = items[0].height - 2 * pad
+            val excess = total - available
+            val newPad = maxOf(2.dpToPx(), pad - (excess + 2 * n - 1) / (2 * n))
+            items.forEach { it.setPadding(it.paddingLeft, newPad, it.paddingRight, newPad) }
+            val room = available - header.height - n * 2 * newPad
+            if (room < n * textHeight && textHeight > 0) {
+                val scale = (room.toFloat() / (n * textHeight)).coerceIn(0.5f, 1f)
+                items.forEach { it.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, it.textSize * scale) }
+            }
+        }
+    }
+
+    private fun launchFolderItem(item: Prefs.FolderItem) {
+        launchAppOrShortcut(
+            appName = item.label,
+            packageName = item.packageName,
+            activityClassName = item.className,
+            shortcutId = item.shortcutId,
+            isShortcut = item.isShortcut,
+            userString = item.user
+        )
+    }
+
+    /** Retire le contenu du dossier ouvert, sans reafficher les favoris. */
+    private fun removeFolderViews() {
+        if (_binding != null) folderViews.forEach { binding.homeAppsLayout.removeView(it) }
+        folderViews.clear()
+        openFolderSlot = 0
+        folderBackCallback.isEnabled = false
+    }
+
+    private fun closeFolder() {
+        if (openFolderSlot == 0) return
+        removeFolderViews()
+        populateHomeScreen(true)
+    }
+
+    // ---------------------------------------------------------------------
+    // Fenetre de gestion d'un dossier : nom, elements (renommer, ▲ ▼ ✕), ajout, defaire
+    // ---------------------------------------------------------------------
+
+    private fun showFolderDialog(slot: Int) {
+        val folderId = prefs.getFolderId(slot)
+        if (folderId.isEmpty()) return
+        folderDialog?.dismiss()
+        val wasOpen = openFolderSlot == slot
+        val items = prefs.getFolderItems(folderId).toMutableList()
+        val labelEdits = mutableListOf<EditText>()
+        lateinit var nameEdit: EditText
+        lateinit var dialog: OlDialog
+
+        fun save() {
+            labelEdits.forEachIndexed { i, edit ->
+                val text = edit.text.toString().trim()
+                if (i < items.size && text.isNotEmpty()) items[i] = items[i].copy(label = text)
+            }
+            prefs.setFolderItems(folderId, items)
+            val name = nameEdit.text.toString().trim()
+            if (name.isNotEmpty()) prefs.setFolderName(slot, name)
+        }
+
+        dialog = requireContext().createDialog(R.string.folder, R.string.okay) { container ->
+            val context = container.context
+            val density = resources.displayMetrics.density
+            val color = context.getColorFromAttr(R.attr.primaryColor)
+            fun dp(v: Int) = (v * density).toInt()
+
+            val root = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(8) }
+            }
+            fun plainEdit(styleRes: Int, initial: String, hintRes: Int) =
+                EditText(context, null, 0, styleRes).apply {
+                    setText(initial)
+                    setHint(hintRes)
+                    setTextColor(color)
+                    setHintTextColor(androidx.core.graphics.ColorUtils.setAlphaComponent(color, 0x66))
+                    setSingleLine(true)
+                    imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+                    inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                        android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                    background = null
+                    setPadding(0, dp(8), 0, dp(8))
+                }
+
+            nameEdit = plainEdit(R.style.TextSmallBold, prefs.getAppName(slot), R.string.folder_name_hint)
+            root.addView(nameEdit)
+            root.addView(View(context).apply {
+                setBackgroundColor(color)
+                alpha = 0.3f
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
+                bottomMargin = dp(8)
+            })
+
+            val list = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+            root.addView(list)
+
+            fun fill() {
+                list.removeAllViews()
+                labelEdits.clear()
+                items.forEachIndexed { index, item ->
+                    val row = LinearLayout(context).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER_VERTICAL
+                    }
+                    val edit = plainEdit(R.style.TextSmall, item.label, R.string.folder_name_hint)
+                    labelEdits += edit
+                    row.addView(edit, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                    fun button(symbol: String, description: Int, enabled: Boolean, onClick: () -> Unit) =
+                        TextView(context, null, 0, R.style.TextSmallBold).apply {
+                            text = symbol
+                            contentDescription = getString(description)
+                            setTextColor(color)
+                            alpha = if (enabled) 1f else 0.15f
+                            isEnabled = enabled
+                            setPadding(dp(12), dp(8), dp(12), dp(8))
+                            if (enabled) setOnClickListener {
+                                save()
+                                onClick()
+                                prefs.setFolderItems(folderId, items)
+                                fill()
+                            }
+                        }
+                    row.addView(button("▲", R.string.move_up, index > 0) {
+                        items.add(index - 1, items.removeAt(index))
+                    })
+                    row.addView(button("▼", R.string.move_down, index < items.size - 1) {
+                        items.add(index + 1, items.removeAt(index))
+                    })
+                    row.addView(button("✕", R.string.folder_remove_item, true) {
+                        items.removeAt(index)
+                    })
+                    list.addView(row)
+                }
+
+                val full = items.size >= Prefs.FOLDER_MAX_ITEMS
+                list.addView(TextView(context, null, 0, R.style.TextSmall).apply {
+                    text = getString(if (full) R.string.folder_full else R.string.folder_add)
+                    setTextColor(color)
+                    alpha = if (full) 0.5f else 1f
+                    setPadding(0, dp(12), 0, dp(8))
+                    if (!full) setOnClickListener {
+                        save()
+                        prefs.pendingFolderEdit = slot
+                        dialog.setOnDismissListener(null)
+                        dialog.dismiss()
+                        folderDialog = null
+                        showAppList(Constants.FLAG_ADD_FOLDER_ITEM_1 + slot - 1, includeHiddenApps = true)
+                    }
+                })
+            }
+            fill()
+
+            var confirm = false
+            root.addView(TextView(context, null, 0, R.style.TextSmall).apply {
+                text = getString(R.string.folder_undo)
+                setTextColor(color)
+                alpha = 0.6f
+                setPadding(0, dp(12), 0, dp(4))
+                setOnClickListener {
+                    if (!confirm) {
+                        confirm = true
+                        text = getString(R.string.folder_undo_confirm)
+                        alpha = 1f
+                        return@setOnClickListener
+                    }
+                    prefs.removeFolder(slot)
+                    dialog.setOnDismissListener(null)
+                    dialog.dismiss()
+                    folderDialog = null
+                    removeFolderViews()
+                    populateHomeScreen(true)
+                }
+            })
+            // Jusqu'a 10 elements + clavier : la fenetre doit pouvoir defiler
+            android.widget.ScrollView(context).apply {
+                layoutParams = ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(8) }
+                isVerticalScrollBarEnabled = false
+                addView(root.apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                })
+            }
+        }
+        dialog.setOnDismissListener {
+            save()
+            folderDialog = null
+            if (_binding == null) return@setOnDismissListener
+            removeFolderViews()
+            populateHomeScreen(true)
+            if (wasOpen && visibleFolderItems(slot).isNotEmpty()) openFolder(slot)
+        }
+        folderDialog = dialog
+        dialog.showRespectingStatusBar()
+    }
+
+    // =====================================================================
     // Olauncher+ : points de notification
     // =====================================================================
 
@@ -964,7 +1311,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         homeViews.forEachIndexed { index, view ->
             val slot = index + 1
             val name = prefs.getAppName(slot)
-            if (slot <= prefs.homeAppsNum && name.isNotEmpty() && view.text.isNotEmpty())
+            if (slot <= prefs.homeAppsNum && name.isNotEmpty() && view.text.isNotEmpty() && !prefs.isFolder(slot))
                 view.text = labelWithDot(name, prefs.getAppPackage(slot))
         }
         quickAppViews().forEachIndexed { index, view ->
@@ -973,7 +1320,17 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         }
     }
 
+    override fun onStop() {
+        // Olauncher+ : en revenant sur l'accueil, on retrouve les favoris, pas un dossier ouvert
+        if (_binding != null) removeFolderViews()
+        super.onStop()
+    }
+
     override fun onDestroyView() {
+        folderDialog?.dismiss()
+        folderDialog = null
+        openFolderSlot = 0
+        folderViews.clear()
         super.onDestroyView()
         _binding = null
         defaultTopPadding = -1

@@ -83,7 +83,8 @@ class AppDrawerFragment : BaseFragment() {
         if (flag == Constants.FLAG_HIDDEN_APPS)
             binding.search.queryHint = getString(R.string.hidden_apps)
         else if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_CALENDAR_APP ||
-            flag in Constants.FLAG_SET_QUICK_APP_1..Constants.FLAG_SET_QUICK_APP_5
+            flag in Constants.FLAG_SET_QUICK_APP_1..Constants.FLAG_SET_QUICK_APP_5 ||
+            flag in Constants.FLAG_ADD_FOLDER_ITEM_1..Constants.FLAG_ADD_FOLDER_ITEM_8
         )
             binding.search.queryHint = getString(R.string.please_select_an_app)
         initMoveButtons()
@@ -101,6 +102,7 @@ class AppDrawerFragment : BaseFragment() {
      */
     private fun initMoveButtons() {
         val isHomeSlot = flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_HOME_APP_8
+        if (isHomeSlot) initFolderButton()
         if (!isHomeSlot || !canRename) return
         val slot = flag
         val count = prefs.homeAppsNum
@@ -113,6 +115,22 @@ class AppDrawerFragment : BaseFragment() {
         }
         binding.moveDown.setOnClickListener {
             prefs.swapHomeApps(slot, slot + 1)
+            viewModel.refreshHome(false)
+            closeDrawer()
+        }
+    }
+
+    /**
+     * Olauncher+ : bouton « DOSSIER » — transforme ce favori en dossier. Le texte deja tape
+     * dans la recherche devient son nom ; la fenetre du dossier s'ouvre au retour sur l'accueil.
+     */
+    private fun initFolderButton() {
+        val slot = flag
+        binding.makeFolder.visibility = View.VISIBLE
+        binding.makeFolder.setOnClickListener {
+            val typed = binding.search.query.toString().trim()
+            prefs.makeFolder(slot, typed.ifEmpty { getString(R.string.folder_default_name) })
+            prefs.pendingFolderEdit = slot
             viewModel.refreshHome(false)
             closeDrawer()
         }

@@ -661,10 +661,10 @@ class Prefs(context: Context) {
     // Olauncher+ : reordonnancement des favoris
     // ---------------------------------------------------------------------
 
-    /** Echange deux emplacements de l'ecran d'accueil (nom, appli, profil, raccourci). */
+    /** Echange deux emplacements de l'ecran d'accueil (nom, appli, profil, raccourci, dossier). */
     fun swapHomeApps(a: Int, b: Int) {
         if (a !in 1..8 || b !in 1..8 || a == b) return
-        val stringKeys = listOf("APP_NAME_", "APP_PACKAGE_", "APP_ACTIVITY_CLASS_NAME_", "APP_USER_", "SHORTCUT_ID_")
+        val stringKeys = listOf("APP_NAME_", "APP_PACKAGE_", "APP_ACTIVITY_CLASS_NAME_", "APP_USER_", "SHORTCUT_ID_", "FOLDER_ID_")
         prefs.edit {
             for (k in stringKeys) {
                 val va = prefs.getString(k + a, "")
@@ -733,4 +733,104 @@ class Prefs(context: Context) {
     var notificationDots: Boolean
         get() = prefs.getBoolean("NOTIFICATION_DOTS", false)
         set(value) = prefs.edit { putBoolean("NOTIFICATION_DOTS", value) }
+
+    // ---------------------------------------------------------------------
+    // Olauncher+ : dossiers (un favori peut ouvrir une liste d'applis et de sites)
+    // ---------------------------------------------------------------------
+
+    /** Element d'un dossier : une appli, ou un raccourci epingle (site web ajoute depuis Firefox...). */
+    data class FolderItem(
+        val label: String,
+        val packageName: String,
+        val className: String,
+        val user: String,
+        val shortcutId: String,
+    ) {
+        val isShortcut: Boolean get() = shortcutId.isNotEmpty()
+    }
+
+    /**
+     * Identifiant du dossier porte par un emplacement de l'accueil ; vide = favori ordinaire.
+     * Le contenu est range sous cet identifiant, si bien qu'echanger deux favoris
+     * (▲ / ▼) deplace le dossier avec son contenu.
+     */
+    fun getFolderId(slot: Int): String = prefs.getString("FOLDER_ID_$slot", "").toString()
+
+    fun isFolder(slot: Int): Boolean = getFolderId(slot).isNotEmpty()
+
+    /** Transforme un emplacement en dossier (vide), nomme [name]. */
+    fun makeFolder(slot: Int, name: String) {
+        if (slot !in 1..8) return
+        prefs.edit {
+            putString("FOLDER_ID_$slot", "f" + System.currentTimeMillis())
+            putString("APP_NAME_$slot", name)
+            putString("APP_PACKAGE_$slot", "")
+            putString("APP_ACTIVITY_CLASS_NAME_$slot", "")
+            putString("APP_USER_$slot", "")
+            putString("SHORTCUT_ID_$slot", "")
+            putBoolean("IS_SHORTCUT_$slot", false)
+        }
+    }
+
+    /** Defait le dossier : l'emplacement redevient un favori vide (son contenu est efface). */
+    fun removeFolder(slot: Int) {
+        val id = getFolderId(slot)
+        prefs.edit {
+            if (id.isNotEmpty()) remove("FOLDER_ITEMS_$id")
+            putString("FOLDER_ID_$slot", "")
+            putString("APP_NAME_$slot", "")
+        }
+    }
+
+    /** Un favori ordinaire est choisi pour cet emplacement : ce n'est plus un dossier. */
+    fun clearFolderFlag(slot: Int) {
+        if (isFolder(slot)) removeFolder(slot)
+    }
+
+    fun setFolderName(slot: Int, name: String) = prefs.edit { putString("APP_NAME_$slot", name) }
+
+    fun getFolderItems(folderId: String): List<FolderItem> {
+        if (folderId.isEmpty()) return emptyList()
+        return try {
+            val array = org.json.JSONArray(prefs.getString("FOLDER_ITEMS_$folderId", "[]"))
+            (0 until array.length()).map { i ->
+                val o = array.getJSONObject(i)
+                FolderItem(
+                    label = o.optString("label"),
+                    packageName = o.optString("package"),
+                    className = o.optString("class"),
+                    user = o.optString("user"),
+                    shortcutId = o.optString("shortcut"),
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    fun setFolderItems(folderId: String, items: List<FolderItem>) {
+        if (folderId.isEmpty()) return
+        val array = org.json.JSONArray()
+        items.take(FOLDER_MAX_ITEMS).forEach {
+            array.put(
+                org.json.JSONObject()
+                    .put("label", it.label)
+                    .put("package", it.packageName)
+                    .put("class", it.className)
+                    .put("user", it.user)
+                    .put("shortcut", it.shortcutId)
+            )
+        }
+        prefs.edit { putString("FOLDER_ITEMS_$folderId", array.toString()) }
+    }
+
+    /** Emplacement dont la fenetre « dossier » doit se rouvrir au retour sur l'accueil (0 = aucun). */
+    var pendingFolderEdit: Int
+        get() = prefs.getInt("PENDING_FOLDER_EDIT", 0)
+        set(value) = prefs.edit { putInt("PENDING_FOLDER_EDIT", value) }
+
+    companion object {
+        const val FOLDER_MAX_ITEMS = 10
+    }
 }

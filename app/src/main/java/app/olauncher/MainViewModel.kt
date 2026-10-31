@@ -71,6 +71,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectedApp(appModel: AppModel, flag: Int) {
         if (appModel is AppModel.PrivateSpaceHeader) return
+        // Olauncher+ : choisir une appli pour un favori qui etait un dossier le redevient favori
+        if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_HOME_APP_8)
+            prefs.clearFolderFlag(flag)
         when (flag) {
             Constants.FLAG_LAUNCH_APP -> {
                 when (appModel) {
@@ -105,7 +108,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             in Constants.FLAG_SET_QUICK_APP_1..Constants.FLAG_SET_QUICK_APP_5 ->
                 saveQuickApp(appModel, flag - Constants.FLAG_SET_QUICK_APP_1 + 1)
+
+            in Constants.FLAG_ADD_FOLDER_ITEM_1..Constants.FLAG_ADD_FOLDER_ITEM_8 ->
+                addFolderItem(appModel, flag - Constants.FLAG_ADD_FOLDER_ITEM_1 + 1)
         }
+    }
+
+    /** Olauncher+ : ajoute une appli ou un raccourci (site web) au dossier de l'emplacement. */
+    private fun addFolderItem(appModel: AppModel, slot: Int) {
+        val folderId = prefs.getFolderId(slot)
+        if (folderId.isEmpty()) return
+        val items = prefs.getFolderItems(folderId).toMutableList()
+        if (items.size >= Prefs.FOLDER_MAX_ITEMS) return
+        val item = when (appModel) {
+            is AppModel.App -> Prefs.FolderItem(
+                label = appModel.appLabel,
+                packageName = appModel.appPackage,
+                className = appModel.activityClassName ?: "",
+                user = appModel.user.toString(),
+                shortcutId = "",
+            )
+            is AppModel.PinnedShortcut -> Prefs.FolderItem(
+                label = appModel.appLabel,
+                packageName = appModel.appPackage,
+                className = "",
+                user = appModel.user.toString(),
+                shortcutId = appModel.shortcutId,
+            )
+            else -> return
+        }
+        items += item
+        prefs.setFolderItems(folderId, items)
+        refreshHome(false)
     }
 
     private fun saveQuickApp(appModel: AppModel, slot: Int) {

@@ -89,6 +89,10 @@ object Constants {
     const val FLAG_SET_QUICK_APP_1 = 21
     const val FLAG_SET_QUICK_APP_5 = 25
 
+    // Olauncher+ : ajouter un element au dossier de l'emplacement 1..8
+    const val FLAG_ADD_FOLDER_ITEM_1 = 31
+    const val FLAG_ADD_FOLDER_ITEM_8 = 38
+
     const val REQUEST_CODE_ENABLE_ADMIN = 666
     const val REQUEST_CODE_LAUNCHER_SELECTOR = 678
 

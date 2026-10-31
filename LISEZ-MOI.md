@@ -1,7 +1,52 @@
-# Olauncher+ — v01c_2026-10-31
+# Olauncher+ — v02_2026-10-31
 
-Version **mineure** : elle s'installe par-dessus la v01, la v01a ou la v01b, réglages
-conservés. Rien à supprimer à la main, aucune resynchronisation.
+Version **majeure** : à lire en entier. Elle s'installe toujours **par-dessus**
+la v01, v01a, v01b ou v01c, sans rien perdre (favoris, icônes, réglages).
+Rien à supprimer à la main, aucune resynchronisation.
+
+Cette archive est **complète** (`olauncher-plus-complet-v02_…`) : elle contient
+tout le code, et peut aussi servir à repartir de zéro.
+
+## Nouveauté de la v02 : les dossiers
+
+Un favori de l'accueil peut devenir un **dossier** : un mot (par exemple
+« Infos ») qui ouvre une liste d'applis et de sites, jusqu'à 10. Un dossier
+**prend la place d'un favori** : il n'ajoute aucune ligne à l'accueil. Plusieurs
+dossiers sont possibles.
+
+- **Créer** : appui long sur un favori › bouton **DOSSIER** en haut, à côté de
+  ▲ ▼. Si vous avez tapé un mot dans la recherche, il devient le nom du dossier
+  (sinon « Dossier »). La fenêtre du dossier s'ouvre aussitôt pour le remplir.
+- **Remplir** : « + Ajouter une appli ou un site ». La liste proposée comprend les
+  applis et les **raccourcis de sites** : dans Firefox, menu ⋮ › « Ajouter à
+  l'écran d'accueil » crée un raccourci qu'Olauncher+ range parmi les applis.
+- **Ouvrir** : toucher le nom du dossier (suivi d'un discret « › »). Son contenu
+  remplace la liste des favoris, au même endroit et dans le même style, sous une
+  petite ligne « ‹ Infos ». Pour le refermer : Retour, toucher la ligne
+  « ‹ Infos », toucher une zone vide, ou quitter l'accueil.
+- **Tenir à l'écran** : si les lignes ne tiennent pas, l'espacement se resserre,
+  puis le texte rapetisse.
+- **Gérer** : appui long sur le dossier (fermé ou ouvert). On y renomme le
+  dossier et chaque élément (toucher le nom pour le modifier : utile pour les
+  titres de sites trop longs), on réordonne (▲ ▼), on retire (✕), on ajoute.
+  « Défaire ce dossier » (deux touchers) rend un favori vide ; le contenu est perdu.
+- Un dossier se déplace comme un favori (▲ ▼, « Réorganiser les favoris »),
+  avec son contenu.
+
+### Fichiers changés depuis la v01c
+
+```
+LISEZ-MOI.md
+app/build.gradle                         VERSION v02, versionCode 119
+app/src/main/java/app/olauncher/MainViewModel.kt
+app/src/main/java/app/olauncher/data/Constants.kt
+app/src/main/java/app/olauncher/data/Prefs.kt
+app/src/main/java/app/olauncher/ui/AppDrawerFragment.kt
+app/src/main/java/app/olauncher/ui/HomeFragment.kt
+app/src/main/res/layout/fragment_app_drawer.xml      (+ layout-land/)
+app/src/main/res/values/strings.xml
+app/src/main/res/values-fr/strings.xml
+```
 
 ## Nouveautés de la v01c
 
@@ -164,14 +209,15 @@ Aucun fichier à supprimer à la main. Aucune resynchronisation.
 
 ## Contrôles passés avant envoi
 
-- VERSION `v01c_2026-10-31` (versionName de `app/build.gradle`) conforme à la forme
+- VERSION `v02_2026-10-31` (versionName de `app/build.gradle`) conforme à la forme
   `vnn[lettre]_AAAA-MM-JJ` ; le nom de l'archive la reprend (script
   `scripts/verifier_version.sh`, rejoué aussi par GitHub sur le nom de l'APK).
 - Relecture complète du code ajouté.
 - v01 compilée avec succès par GitHub et testée sur téléphone par François.
 - v01a compilée par GitHub et testée sur téléphone par François.
 - v01b compilée par GitHub et installée sur téléphone par François.
-- v01c : compilation faite par GitHub à l'envoi (l'environnement de rédaction
+- v01c compilée par GitHub et installée sur téléphone par François.
+- v02 : compilation faite par GitHub à l'envoi (l'environnement de rédaction
   n'a pas accès aux serveurs Android) ; en cas d'échec, l'onglet Actions affiche
   l'erreur.
 

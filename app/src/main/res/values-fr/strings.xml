@@ -163,4 +163,13 @@
     <string name="reorder_needs_one_icon">Affichez d\'abord au moins 1 icône rapide</string>
     <string name="choose_icon">Choisir le pictogramme</string>
     <string name="icon_auto">Auto</string>
+    <string name="folder">Dossier</string>
+    <string name="folder_default_name">Dossier</string>
+    <string name="make_folder">Dossier</string>
+    <string name="folder_name_hint">Nom</string>
+    <string name="folder_remove_item">Retirer</string>
+    <string name="folder_add">+ Ajouter une appli ou un site</string>
+    <string name="folder_full">10 éléments au maximum</string>
+    <string name="folder_undo">Défaire ce dossier</string>
+    <string name="folder_undo_confirm">Toucher à nouveau pour confirmer (son contenu sera perdu)</string>
 </resources><!-- French -->

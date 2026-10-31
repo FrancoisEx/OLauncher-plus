@@ -196,4 +196,13 @@
     <string name="reorder_needs_one_icon">Show at least 1 quick icon first</string>
     <string name="choose_icon">Choose the icon</string>
     <string name="icon_auto">Auto</string>
+    <string name="folder">Folder</string>
+    <string name="folder_default_name">Folder</string>
+    <string name="make_folder">Folder</string>
+    <string name="folder_name_hint">Name</string>
+    <string name="folder_remove_item">Remove</string>
+    <string name="folder_add">+ Add an app or a website</string>
+    <string name="folder_full">10 items maximum</string>
+    <string name="folder_undo">Undo this folder</string>
+    <string name="folder_undo_confirm">Tap again to confirm (its content will be lost)</string>
 </resources>
