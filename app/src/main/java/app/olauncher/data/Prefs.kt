@@ -168,9 +168,17 @@ class Prefs(context: Context) {
         get() = prefs.getInt(HOME_ALIGNMENT, Gravity.START)
         set(value) = prefs.edit { putInt(HOME_ALIGNMENT, value).apply() }
 
-    var homeBottomAlignment: Boolean
-        get() = prefs.getBoolean(HOME_BOTTOM_ALIGNMENT, false)
-        set(value) = prefs.edit { putBoolean(HOME_BOTTOM_ALIGNMENT, value).apply() }
+    /**
+     * Olauncher+ : Haut, Milieu ou Bas. Remplace l'ancien interrupteur « Bas » d'Olauncher :
+     * tant que la nouvelle cle n'existe pas, on reprend l'ancien reglage (Bas ou Milieu).
+     */
+    var homeVerticalPosition: Int
+        get() = prefs.getInt(
+            "HOME_VERTICAL_POSITION",
+            if (prefs.getBoolean(HOME_BOTTOM_ALIGNMENT, false)) Constants.VerticalPosition.BOTTOM
+            else Constants.VerticalPosition.MIDDLE
+        )
+        set(value) = prefs.edit { putInt("HOME_VERTICAL_POSITION", value) }
 
     var appLabelAlignment: Int
         get() = prefs.getInt(APP_LABEL_ALIGNMENT, Gravity.START)
@@ -698,6 +706,20 @@ class Prefs(context: Context) {
     }
 
     fun clearQuickApp(slot: Int) = setQuickApp(slot, "", "", "", "")
+
+    /** Echange deux icones rapides (nom, appli, activite, profil). */
+    fun swapQuickApps(a: Int, b: Int) {
+        if (a !in 1..5 || b !in 1..5 || a == b) return
+        val keys = listOf("QUICK_APP_LABEL_", "QUICK_APP_PACKAGE_", "QUICK_APP_CLASS_", "QUICK_APP_USER_")
+        prefs.edit {
+            for (k in keys) {
+                val va = prefs.getString(k + a, "")
+                val vb = prefs.getString(k + b, "")
+                putString(k + a, vb)
+                putString(k + b, va)
+            }
+        }
+    }
 
     // ---------------------------------------------------------------------
     // Olauncher+ : points de notification

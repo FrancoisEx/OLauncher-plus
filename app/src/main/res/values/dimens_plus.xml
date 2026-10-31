@@ -2,4 +2,10 @@
 <resources>
     <!-- Olauncher+ : taille d'une icone rapide (zone tactile comprise) -->
     <dimen name="quick_app_size">44dp</dimen>
+    <!-- Marge autour du dessin : icone de 24dp, comme les icones systeme -->
+    <dimen name="quick_app_padding">10dp</dimen>
+    <!-- Ecart entre deux icones. Le pas (48dp) differe volontairement de celui des
+         favoris (environ 60dp) : icones et noms ne tombent pas sur les memes lignes,
+         ce qui evitait de suggerer un lien entre eux. -->
+    <dimen name="quick_app_gap">2dp</dimen>
 </resources>

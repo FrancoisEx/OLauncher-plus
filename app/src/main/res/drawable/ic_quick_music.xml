@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Olauncher+ : icone rapide « music » (Material Symbols « music_note », Apache 2.0) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <group android:translateY="960">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M301.89-182.35q-38.5-38.5-38.5-94.19t38.5-94.19q38.5-38.5 94.19-38.5 26.46 0 48.77 8.58 22.3 8.57 38.53 24.5v-440h213.23v112.3H528.77v427.31q0 55.69-38.5 94.19t-94.19 38.5q-55.69 0-94.19-38.5Z" />
+    </group>
+</vector>

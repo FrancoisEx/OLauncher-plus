@@ -187,4 +187,11 @@
     <string name="reorder_needs_two_apps">Show at least 2 apps on the home screen first</string>
     <string name="notification_dots">Notification dots</string>
     <string name="notification_dots_disclosure">To show a dot next to apps with unread notifications, Olauncher+ needs notification access. Only the app name is used, kept in memory and never shared. The content of your notifications is never read.\n\nIf the switch is greyed out: Settings › Apps › Olauncher+ › ⋮ › Allow restricted settings.</string>
+    <string name="reorder_quick_apps">Reorder quick icons</string>
+    <string name="reorder_needs_two_icons">Show at least 2 quick icons first</string>
+    <string name="vertical_position">Vertical position</string>
+    <string name="top">Top</string>
+    <string name="middle">Middle</string>
+    <string name="bottom">Bottom</string>
+    <string name="fork_of_olauncher">, a fork of Olauncher</string>
 </resources>

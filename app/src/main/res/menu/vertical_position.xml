@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Olauncher+ : position verticale des favoris et des icones rapides -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/positionTop"
+        android:title="@string/top" />
+    <item
+        android:id="@+id/positionMiddle"
+        android:title="@string/middle" />
+    <item
+        android:id="@+id/positionBottom"
+        android:title="@string/bottom" />
+</menu>

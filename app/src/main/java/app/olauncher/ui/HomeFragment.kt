@@ -5,11 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
-import android.graphics.drawable.Drawable
 import android.provider.MediaStore
 import android.provider.Telephony
 import android.widget.ImageView
@@ -18,6 +15,7 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.RelativeSizeSpan
 import app.olauncher.helper.DotDrawable
+import app.olauncher.helper.QuickIcons
 import app.olauncher.helper.NotificationDotService
 import android.content.res.Configuration
 import android.os.BatteryManager
@@ -34,6 +32,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.bundleOf
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
@@ -216,7 +215,6 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
                     prefs.dailyWallpaper = false
                     viewModel.cancelWallpaperWorker()
                 }
-                prefs.homeBottomAlignment = false
                 setHomeAlignment()
             }
             if (binding.firstRunTips.isVisible) return@Observer
@@ -298,7 +296,11 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun setHomeAlignment(horizontalGravity: Int = prefs.homeAlignment) {
-        val verticalGravity = if (prefs.homeBottomAlignment) Gravity.BOTTOM else Gravity.CENTER_VERTICAL
+        val verticalGravity = when (prefs.homeVerticalPosition) {
+            Constants.VerticalPosition.TOP -> Gravity.TOP
+            Constants.VerticalPosition.BOTTOM -> Gravity.BOTTOM
+            else -> Gravity.CENTER_VERTICAL
+        }
         binding.homeAppsLayout.gravity = horizontalGravity or verticalGravity
         binding.dateTimeLayout.gravity = horizontalGravity
         binding.homeApp1.gravity = horizontalGravity
@@ -310,6 +312,39 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         binding.homeApp7.gravity = horizontalGravity
         binding.homeApp8.gravity = horizontalGravity
         positionQuickApps(horizontalGravity, verticalGravity)
+        updateTopSpacing()
+    }
+
+    /**
+     * Olauncher+ : en position « Haut », la liste (et les icones) commencent juste sous
+     * l'heure et la date, quelle que soit leur taille ; sinon on garde les marges d'origine.
+     */
+    private var defaultTopPadding = -1
+    private var defaultQuickTopMargin = -1
+
+    private fun updateTopSpacing() {
+        val layout = binding.homeAppsLayout
+        val quickParams = binding.quickAppsLayout.layoutParams as FrameLayout.LayoutParams
+        if (defaultTopPadding < 0) defaultTopPadding = layout.paddingTop
+        if (defaultQuickTopMargin < 0) defaultQuickTopMargin = quickParams.topMargin
+        if (prefs.homeVerticalPosition != Constants.VerticalPosition.TOP) {
+            layout.setPaddingRelative(layout.paddingStart, defaultTopPadding, layout.paddingEnd, layout.paddingBottom)
+            quickParams.topMargin = defaultQuickTopMargin
+            binding.quickAppsLayout.layoutParams = quickParams
+            return
+        }
+        binding.dateTimeLayout.doOnLayout {
+            if (_binding == null) return@doOnLayout
+            val below = if (binding.dateTimeLayout.isVisible) binding.dateTimeLayout.bottom + 32.dpToPx() else 0
+            val top = maxOf(defaultTopPadding, below)
+            binding.homeAppsLayout.setPaddingRelative(
+                binding.homeAppsLayout.paddingStart, top,
+                binding.homeAppsLayout.paddingEnd, binding.homeAppsLayout.paddingBottom
+            )
+            val params = binding.quickAppsLayout.layoutParams as FrameLayout.LayoutParams
+            params.topMargin = top
+            binding.quickAppsLayout.layoutParams = params
+        }
     }
 
     private fun populateDateTime() {
@@ -328,6 +363,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
                 dateText = getString(R.string.day_battery, dateText, battery)
         }
         binding.date.text = dateText.replace(".,", ",")
+        updateTopSpacing() // l'heure a pu apparaitre ou disparaitre
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -799,6 +835,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         updateHomeAppsSidePadding()
         if (num == 0) return
         setDefaultQuickApps()
+        QuickIcons.clearCache() // une appli a pu etre installee ou remplacee
 
         val textColor = binding.homeApp1.currentTextColor
         quickAppViews().forEachIndexed { index, view ->
@@ -809,40 +846,26 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
             }
             view.visibility = View.VISIBLE
             val packageName = prefs.getQuickAppPackage(slot)
-            val icon = if (packageName.isNotEmpty() &&
+            val installed = packageName.isNotEmpty() &&
                 isPackageInstalled(requireContext(), packageName, prefs.getQuickAppUser(slot))
-            ) loadQuickAppIcon(packageName, prefs.getQuickAppClassName(slot), prefs.getQuickAppUser(slot))
-            else null
 
-            if (icon != null) {
-                // Icones en niveaux de gris : discret, dans l'esprit minimaliste
-                icon.mutate().colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
-                view.setImageDrawable(icon)
+            if (installed) {
+                // Icone au trait d'un meme jeu, choisie selon le role de l'appli
+                view.setImageDrawable(
+                    QuickIcons.iconFor(requireContext(), packageName, prefs.getQuickAppLabel(slot), textColor)
+                )
                 view.alpha = 0.9f
                 view.contentDescription = prefs.getQuickAppLabel(slot)
                 applyQuickAppDot(view, packageName)
             } else {
                 view.foreground = null
                 // Emplacement vide : un « + » discret, appui long pour choisir l'appli
-                val plus = ContextCompat.getDrawable(requireContext(), android.R.drawable.ic_input_add)?.mutate()
+                val plus = ContextCompat.getDrawable(requireContext(), R.drawable.ic_quick_add)?.mutate()
                 plus?.colorFilter = PorterDuffColorFilter(textColor, PorterDuff.Mode.SRC_IN)
                 view.setImageDrawable(plus)
                 view.alpha = 0.4f
                 view.contentDescription = getString(R.string.long_press_to_choose_quick_app)
             }
-        }
-    }
-
-    private fun loadQuickAppIcon(packageName: String, className: String, userString: String): Drawable? {
-        return try {
-            val launcherApps = requireContext().getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
-            val user = getUserHandleFromString(requireContext(), userString)
-            val activities = launcherApps.getActivityList(packageName, user)
-            val info = activities.firstOrNull { it.componentName.className == className } ?: activities.firstOrNull()
-            info?.getIcon(resources.displayMetrics.densityDpi)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
         }
     }
 
@@ -950,5 +973,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        defaultTopPadding = -1
+        defaultQuickTopMargin = -1
     }
 }

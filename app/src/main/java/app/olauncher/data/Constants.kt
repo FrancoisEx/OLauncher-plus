@@ -27,6 +27,13 @@ object Constants {
         const val SHARE = "SHARE"
     }
 
+    /** Olauncher+ : position verticale des favoris (et des icones rapides). */
+    object VerticalPosition {
+        const val TOP = 0
+        const val MIDDLE = 1
+        const val BOTTOM = 2
+    }
+
     object DateTime {
         const val OFF = 0
         const val ON = 1

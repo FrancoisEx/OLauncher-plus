@@ -83,6 +83,7 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         binding.quickAppsNum.text = prefs.quickAppsNum.toString()
         populateNotificationDots()
         binding.aboutOlauncher.text = "Olauncher+ " + BuildConfig.VERSION_NAME
+        populateTitle()
         populateProMessage()
         populateKeyboardText()
         populateScreenTimeOnOff()
@@ -94,6 +95,7 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         populateTextSize()
         populateBoldFont()
         populateAlignment()
+        populateVerticalPosition()
         populateStatusBar()
         populateDateTime()
         populateSwipeApps()
@@ -119,6 +121,8 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
             R.id.homeAppsNum -> showHomeAppsNumMenu(view)
             R.id.quickAppsNum -> showQuickAppsNumMenu(view)
             R.id.reorderHomeApps -> showReorderDialog()
+            R.id.reorderQuickApps -> showReorderQuickAppsDialog()
+            R.id.verticalPosition -> showVerticalPositionMenu(view)
             R.id.notificationDots -> toggleNotificationDots()
             R.id.dailyWallpaperUrl -> requireContext().openUrl(prefs.dailyWallpaperUrl)
             R.id.dailyWallpaper -> toggleDailyWallpaperUpdate()
@@ -184,6 +188,8 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         binding.homeAppsNum.setOnClickListener(this)
         binding.quickAppsNum.setOnClickListener(this)
         binding.reorderHomeApps.setOnClickListener(this)
+        binding.reorderQuickApps.setOnClickListener(this)
+        binding.verticalPosition.setOnClickListener(this)
         binding.notificationDots.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
         binding.dailyWallpaperUrl.setOnClickListener(this)
@@ -257,14 +263,53 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
     // Olauncher+ : mode « Reorganiser les favoris »
     // ---------------------------------------------------------------------
 
+    /**
+     * Olauncher+ : titre des Reglages « Olauncher+, un fork de Olauncher », pour qu'on ne
+     * confonde pas ce lanceur avec l'original. La precision est en plus petit pour tenir
+     * sur une ligne a cote du bouton (i).
+     */
+    private fun populateTitle() {
+        val name = getString(R.string.app_name)
+        val title = android.text.SpannableString(name + getString(R.string.fork_of_olauncher))
+        title.setSpan(
+            android.text.style.RelativeSizeSpan(0.55f),
+            name.length, title.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        binding.olauncherHiddenApps.text = title
+    }
+
     private fun showReorderDialog() {
         val count = prefs.homeAppsNum
         if (count < 2) {
             requireContext().showToast(getString(R.string.reorder_needs_two_apps))
             return
         }
+        showReorderList(
+            title = R.string.reorder_home_apps,
+            count = count,
+            name = { slot -> prefs.getAppName(slot) },
+            swap = { a, b -> prefs.swapHomeApps(a, b) }
+        )
+    }
+
+    /** Olauncher+ : meme fenetre, meme geste que pour les favoris. */
+    private fun showReorderQuickAppsDialog() {
+        val count = prefs.quickAppsNum.coerceIn(0, 5)
+        if (count < 2) {
+            requireContext().showToast(getString(R.string.reorder_needs_two_icons))
+            return
+        }
+        showReorderList(
+            title = R.string.reorder_quick_apps,
+            count = count,
+            name = { slot -> prefs.getQuickAppLabel(slot) },
+            swap = { a, b -> prefs.swapQuickApps(a, b) }
+        )
+    }
+
+    private fun showReorderList(title: Int, count: Int, name: (Int) -> String, swap: (Int, Int) -> Unit) {
         lateinit var list: LinearLayout
-        val dialog = requireContext().createDialog(R.string.reorder_home_apps, R.string.okay) { container ->
+        val dialog = requireContext().createDialog(title, R.string.okay) { container ->
             LinearLayout(container.context).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = ViewGroup.MarginLayoutParams(
@@ -273,12 +318,12 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
                 list = this
             }
         }
-        fillReorderList(list, count)
+        fillReorderList(list, count, name, swap)
         dialog.setOnDismissListener { viewModel.refreshHome(false) }
         showDialog(dialog)
     }
 
-    private fun fillReorderList(list: LinearLayout, count: Int) {
+    private fun fillReorderList(list: LinearLayout, count: Int, name: (Int) -> String, swap: (Int, Int) -> Unit) {
         list.removeAllViews()
         val context = list.context
         val density = resources.displayMetrics.density
@@ -288,18 +333,18 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
             }
-            val name = TextView(context, null, 0, R.style.TextSmall).apply {
-                text = prefs.getAppName(slot).ifEmpty { "\u2014" }
+            val label = TextView(context, null, 0, R.style.TextSmall).apply {
+                text = name(slot).ifEmpty { "\u2014" }
                 setTextColor(textColor)
                 maxLines = 1
                 ellipsize = android.text.TextUtils.TruncateAt.END
                 setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
             }
-            row.addView(name, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            fun arrow(symbol: String, label: Int, enabled: Boolean, onClick: () -> Unit) =
+            row.addView(label, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            fun arrow(symbol: String, description: Int, enabled: Boolean, onClick: () -> Unit) =
                 TextView(context, null, 0, R.style.TextSmallBold).apply {
                     text = symbol
-                    contentDescription = getString(label)
+                    contentDescription = getString(description)
                     setTextColor(textColor)
                     alpha = if (enabled) 1f else 0.15f
                     isEnabled = enabled
@@ -307,11 +352,11 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
                     setPadding(pad, (8 * density).toInt(), pad, (8 * density).toInt())
                     if (enabled) setOnClickListener {
                         onClick()
-                        fillReorderList(list, count)
+                        fillReorderList(list, count, name, swap)
                     }
                 }
-            row.addView(arrow("\u25B2", R.string.move_up, slot > 1) { prefs.swapHomeApps(slot, slot - 1) })
-            row.addView(arrow("\u25BC", R.string.move_down, slot < count) { prefs.swapHomeApps(slot, slot + 1) })
+            row.addView(arrow("\u25B2", R.string.move_up, slot > 1) { swap(slot, slot - 1) })
+            row.addView(arrow("\u25BC", R.string.move_down, slot < count) { swap(slot, slot + 1) })
             list.addView(row)
         }
     }
@@ -385,21 +430,36 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
     }
 
     private fun showAlignmentMenu(anchor: View) {
-        anchor.showPopupMenu(
-            R.menu.alignment,
-            configure = { menu ->
-                menu.findItem(R.id.alignmentBottom).setTitle(
-                    if (prefs.homeBottomAlignment) R.string.bottom_on else R.string.bottom_off
-                )
-            }
-        ) { item ->
+        anchor.showPopupMenu(R.menu.alignment) { item ->
             when (item.itemId) {
                 R.id.alignmentLeft -> viewModel.updateHomeAlignment(Gravity.START)
                 R.id.alignmentCenter -> viewModel.updateHomeAlignment(Gravity.CENTER)
                 R.id.alignmentRight -> viewModel.updateHomeAlignment(Gravity.END)
-                R.id.alignmentBottom -> updateHomeBottomAlignment()
             }
         }
+    }
+
+    // Olauncher+ : position verticale (Haut / Milieu / Bas), remplace l'interrupteur « Bas »
+    private fun showVerticalPositionMenu(anchor: View) {
+        anchor.showPopupMenu(R.menu.vertical_position) { item ->
+            prefs.homeVerticalPosition = when (item.itemId) {
+                R.id.positionTop -> Constants.VerticalPosition.TOP
+                R.id.positionBottom -> Constants.VerticalPosition.BOTTOM
+                else -> Constants.VerticalPosition.MIDDLE
+            }
+            populateVerticalPosition()
+            viewModel.updateHomeAlignment(prefs.homeAlignment)
+        }
+    }
+
+    private fun populateVerticalPosition() {
+        binding.verticalPosition.text = getString(
+            when (prefs.homeVerticalPosition) {
+                Constants.VerticalPosition.TOP -> R.string.top
+                Constants.VerticalPosition.BOTTOM -> R.string.bottom
+                else -> R.string.middle
+            }
+        )
     }
 
     // "System" stays hidden unless the row is long pressed
@@ -741,16 +801,6 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
     private fun populateWallpaperText() {
         if (prefs.dailyWallpaper) binding.dailyWallpaper.text = getString(R.string.on)
         else binding.dailyWallpaper.text = getString(R.string.off)
-    }
-
-    private fun updateHomeBottomAlignment() {
-        if (viewModel.isOlauncherDefault.value != true) {
-            requireContext().showToast(getString(R.string.please_set_olauncher_as_default_first), Toast.LENGTH_LONG)
-            return
-        }
-        prefs.homeBottomAlignment = !prefs.homeBottomAlignment
-        populateAlignment()
-        viewModel.updateHomeAlignment(prefs.homeAlignment)
     }
 
     private fun populateAlignment() {

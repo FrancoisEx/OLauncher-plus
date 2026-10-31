@@ -1,8 +1,45 @@
-# Olauncher+ — v01a_2026-10-30
+# Olauncher+ — v01b_2026-10-31
 
-Ce fichier accompagne aussi bien l'archive **complète** (installation depuis rien)
-que l'archive **différentielle** `olauncher-plus-diff-v01a_…` : celle-ci contient
-seulement les fichiers changés depuis la v01, et s'installe par-dessus la v01.
+Version **mineure** : elle s'installe par-dessus la v01 ou la v01a, réglages
+conservés. Rien à supprimer à la main, aucune resynchronisation.
+
+## Nouveautés de la v01b
+
+- **Icônes rapides homogènes** : chaque icône est désormais un pictogramme au
+  trait d'un même jeu (Material Symbols, licence Apache 2.0), dans la couleur du
+  texte, choisi selon le rôle de l'appli : téléphone, messages, appareil photo,
+  navigateur, mail, galerie, musique, météo, enregistreur, cartes, agenda…
+  (31 pictogrammes). Une appli non reconnue reçoit son initiale dans un cercle,
+  au même trait. Le pas vertical des icônes (48 dp) diffère volontairement de
+  celui des favoris : les deux colonnes ne tombent plus sur les mêmes lignes.
+- **Position verticale** : Réglages › Écran d'accueil › « Position verticale » :
+  Haut, Milieu ou Bas. Elle s'applique aux favoris et aux icônes rapides. En
+  position Haut, la liste commence juste sous l'heure. L'ancien choix « Bas » du
+  menu Alignement est repris automatiquement, puis retiré de ce menu.
+- **Nom dans les Réglages** : le titre devient « Olauncher+, un fork de
+  Olauncher », pour ne pas confondre ce lanceur avec l'original.
+- **Réorganiser les icônes** : Réglages › Écran d'accueil › « Réorganiser les
+  icônes » : même fenêtre ▲ / ▼ que pour les favoris.
+
+### Fichiers changés depuis la v01a
+
+```
+LISEZ-MOI.md
+app/build.gradle                         VERSION v01b, versionCode 117
+app/src/main/java/app/olauncher/data/Constants.kt
+app/src/main/java/app/olauncher/data/Prefs.kt
+app/src/main/java/app/olauncher/helper/QuickIcons.kt   (nouveau)
+app/src/main/java/app/olauncher/ui/HomeFragment.kt
+app/src/main/java/app/olauncher/ui/SettingsFragment.kt
+app/src/main/res/drawable/ic_quick_*.xml               (32 nouveaux)
+app/src/main/res/layout/fragment_home.xml            (+ layout-land/)
+app/src/main/res/layout/fragment_settings.xml        (+ layout-land/)
+app/src/main/res/menu/alignment.xml
+app/src/main/res/menu/vertical_position.xml            (nouveau)
+app/src/main/res/values/dimens_plus.xml
+app/src/main/res/values/strings.xml
+app/src/main/res/values-fr/strings.xml
+```
 
 ## Nouveautés de la v01a (installation par-dessus la v01, réglages conservés)
 
@@ -31,7 +68,7 @@ Olauncher v6.10.27. Elle s'installe **à côté** d'Olauncher (identifiant
    en haut de la liste qui s'ouvre, deux boutons **▲** et **▼** le font monter ou
    descendre d'un cran. (Le renommage et le changement d'appli restent possibles
    comme avant.)
-2. **Icônes rapides** — une colonne de 0 à 5 petites icônes (noir et blanc) sur le
+2. **Icônes rapides** — une colonne de 0 à 5 petites icônes au trait sur le
    bord opposé aux favoris : à droite si les favoris sont à gauche ou centrés, à
    gauche s'ils sont à droite.
    - Au premier lancement : Téléphone, Messages, Appareil photo.
@@ -102,12 +139,13 @@ Aucun fichier à supprimer à la main. Aucune resynchronisation.
 
 ## Contrôles passés avant envoi
 
-- VERSION `v01a_2026-10-30` (versionName de `app/build.gradle`) conforme à la forme
+- VERSION `v01b_2026-10-31` (versionName de `app/build.gradle`) conforme à la forme
   `vnn[lettre]_AAAA-MM-JJ` ; le nom de l'archive la reprend (script
   `scripts/verifier_version.sh`, rejoué aussi par GitHub sur le nom de l'APK).
 - Relecture complète du code ajouté.
 - v01 compilée avec succès par GitHub et testée sur téléphone par François.
-- v01a : compilation faite par GitHub à l'envoi (l'environnement de rédaction
+- v01a compilée par GitHub et testée sur téléphone par François.
+- v01b : compilation faite par GitHub à l'envoi (l'environnement de rédaction
   n'a pas accès aux serveurs Android) ; en cas d'échec, l'onglet Actions affiche
   l'erreur.
 
